@@ -29,7 +29,7 @@ async function ServerFetchDemo(): Promise<React.ReactNode> {
 
   try {
     const res = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=3', {
-      cache: 'force-cache',
+      next: { revalidate: 60 },
     })
     if (!res.ok) throw new Error('Failed to fetch')
     posts = await res.json()
@@ -82,13 +82,9 @@ export default async function ExampleDetailPage({
     notFound()
   }
 
-  const DemoComponent = demosMap[slug] as React.ComponentType
+  const DemoComponent = demosMap[slug]
 
-  // 서버 페치 데이터를 미리 로드
-  let serverFetchContent = null
-  if (slug === 'data-fetching') {
-    serverFetchContent = await ServerFetchDemo()
-  }
+  const serverFetchContent = slug === 'data-fetching' ? await ServerFetchDemo() : null
 
   return (
     <>
