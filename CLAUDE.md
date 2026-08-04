@@ -10,9 +10,9 @@ Next.js 16 모던 웹 스타터킷. React 19, TypeScript, TailwindCSS v4, shadcn
 
 **앱 라우터 기반 구조** (`src/app/`)
 - Next.js 16 App Router를 사용하여 폴더 기반 라우팅 구현
-- 동적 라우트: `[slug]` 패턴으로 예제 상세 페이지 구현 (`src/app/examples/[slug]/page.tsx`)
+- 라우트: `/examples` (데모 목록), `/examples/[slug]` (상세 페이지), `/docs` (문서)
 - 특수 파일: `error.tsx` (에러 경계), `loading.tsx` (라우트 단위 로딩), `not-found.tsx` (404 페이지)
-- 루트 레이아웃 (`src/app/layout.tsx`)에서 테마 제공자, 헤더, 푸터 등 공통 레이아웃 설정
+- 루트 레이아웃 (`src/app/layout.tsx`)에서 ThemeProvider, TooltipProvider, 헤더, 푸터 등 공통 레이아웃 설정
 
 **컴포넌트 계층** (`src/components/`)
 - **UI 컴포넌트** (`src/components/ui/`): shadcn/ui 기본 컴포넌트 (Button, Card, Input 등)
@@ -23,8 +23,8 @@ Next.js 16 모던 웹 스타터킷. React 19, TypeScript, TailwindCSS v4, shadcn
   - 헤더/모바일 네비에서 `src/lib/nav.ts`의 navItems 참조해 메뉴 렌더링
 - **패턴 컴포넌트** (`src/components/patterns/`): 재사용 가능한 복합 컴포넌트 (히어로, 기능 그리드, 페이지 헤더, 코드 블록, 문서 섹션 카드 등)
 - **예제 데모** (`src/components/examples/`): 6개 기능 데모 컴포넌트
-  - ComponentShowcaseDemo, FormBasicsDemo, LayoutPatternsDemo, UseHooksTsDemo, ClientFetchDemo, ThemingDemo
-  - `src/app/examples/[slug]/page.tsx`의 `demosMap`에서 동적으로 로드됨
+  - ComponentShowcaseDemo, FormBasicsDemo, LayoutPatternsDemo, UseHooksTsDemo, ClientFetchDemo(데이터 페칭), ThemingDemo
+  - `src/app/examples/[slug]/page.tsx`의 `demosMap`(5개)과 별도 조건 분기로 로드됨 (data-fetching은 서버 fetch + 클라이언트 fetch 비교)
 
 **데이터/설정** (`src/lib/`)
 - `utils.ts`: `cn()` 클래스 병합 유틸리티
@@ -33,15 +33,17 @@ Next.js 16 모던 웹 스타터킷. React 19, TypeScript, TailwindCSS v4, shadcn
 
 **스타일링**
 - `src/app/globals.css`: TailwindCSS v4 + oklch 색상 변수 정의
+  - `tw-animate-css` 및 `shadcn/tailwind.css`를 import하므로, 해당 부분은 직접 수정하지 않음
 - 라이트/다크 모드를 `:root` 및 `.dark` 선택자로 분리
 - `next-themes`로 테마 전환 로직 구현 (`src/components/theme-provider.tsx`)
 
 ### Next.js 16 주요 변경사항
 
-이 프로젝트는 최신 Next.js 16을 사용하므로 다음을 주의:
-- **동적 라우트 params는 Promise**: `params: Promise<{slug: string}>`로 선언되며, 반드시 `await params`로 처리해야 함 (`src/app/examples/[slug]/page.tsx:73-78` 참조)
+⚠️ **중요**: 이 프로젝트의 Next.js 16은 학습 데이터 시점과 다를 수 있습니다. 확신이 없는 API나 패턴을 사용할 때는 코드 작성 전 `node_modules/next/dist/docs/` 폴더의 관련 가이드를 먼저 확인하세요.
+
+- **동적 라우트 params는 Promise**: `params: Promise<{slug: string}>`로 선언되며, 반드시 `await params`로 처리해야 함 (`src/app/examples/[slug]/page.tsx` 참조)
 - **generateStaticParams**: 동적 라우트를 정적 생성하려면 필수 (`src/app/examples/[slug]/page.tsx:14-18`)
-- **shadcn/ui "base-nova" 스타일**: `@base-ui/react` 기본 컴포넌트 기반으로, `nativeButton` + `render` prop 패턴 사용 (`src/components/ui/button.tsx`)
+- **shadcn/ui "base-nova" 스타일**: `@base-ui/react` 기본 컴포넌트 기반. `render` prop으로 다른 엘리먼트(예: `Link`)를 렌더링할 수 있음 (실사용 예: `src/app/examples/page.tsx:43-50`, `src/components/ui/dialog.tsx`, `sheet.tsx`)
 
 ## 자주 사용하는 명령어
 
@@ -150,6 +152,7 @@ export default async function ResourceDetail({
 
 1. **새 페이지**: `src/app/[route]/page.tsx` 생성 (자동 라우팅)
 2. **새 UI 컴포넌트**: `src/components/ui/` 추가 (CVA 패턴 사용)
+   - shadcn CLI로 추가 시 `components.json` 설정(style: `base-nova`, baseColor: `neutral`, iconLibrary: `lucide`)에 따라 파일이 생성됨
 3. **복합 컴포넌트**: `src/components/patterns/` 추가
 4. **클라이언트 로직**: `'use client'` 지시어로 컴포넌트 마크 (useState, 이벤트 핸들러 등)
 5. **서버 데이터**: 페이지/레이아웃 컴포넌트에서 `async` 선언 후 직접 fetch
@@ -160,3 +163,4 @@ export default async function ResourceDetail({
 - **TypeScript**: `npm run dev` 실행 시 자동 타입 체크 (strict mode)
 - **ESLint**: `npm run lint`로 코드 품질 검사
 - **시각적 검증**: `/examples` 페이지에서 기능 및 UI 확인
+- **주의**: 이 프로젝트에는 자동화된 단위/통합 테스트 스위트가 없습니다 (jest/vitest 미설정, `*.test.ts` 또는 `*.spec.ts` 파일 없음). 모든 검증은 수동 브라우저 테스트 또는 타입 체크로 진행됩니다.
