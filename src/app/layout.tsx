@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Next.js Starter Kit",
-  description: "모던 웹 개발을 위한 Next.js 스타터킷",
+  title: "노션 기반 견적서 관리 시스템",
+  description: "노션을 데이터베이스로 활용하여 견적서를 관리하고, 클라이언트가 웹에서 조회 및 PDF 다운로드할 수 있는 시스템",
 };
 
 export default function RootLayout({

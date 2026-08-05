@@ -1,102 +1,139 @@
-# Next.js 16 모던 웹 스타터킷
+# 노션 기반 견적서 관리 시스템 MVP
 
-Next.js 16, React 19, TypeScript, TailwindCSS v4를 기반으로 만든 프로덕션 레디 웹 스타터킷입니다.
+노션을 데이터베이스로 활용하여 견적서를 관리하고, 클라이언트가 웹에서 조회 및 PDF 다운로드할 수 있는 시스템입니다.
 
 ## 🎯 주요 기능
 
-- **Next.js 16** — App Router와 서버 컴포넌트를 활용한 최신 웹 개발
-- **React 19** — 최신 React 기능과 성능 개선
-- **TypeScript** — 타입 안전성이 보장되는 개발 환경
-- **TailwindCSS v4** — 모던 스타일링 프레임워크
-- **ShadcnUI (base-nova)** — 아름답고 접근성 좋은 UI 컴포넌트
-- **다크모드** — next-themes로 구현된 라이트/다크/시스템 테마 전환
+- **Notion API 연동** — Notion 데이터베이스에서 견적서 데이터 조회
+- **견적서 조회** — Notion 페이지 ID 또는 URL을 통한 견적서 조회
+- **상세 정보 표시** — 클라이언트, 항목, 금액 등 견적서 전체 정보 표시
+- **PDF 다운로드** — 브라우저 인쇄 기능을 통한 PDF 저장
 - **반응형 디자인** — 모바일부터 데스크톱까지 모든 기기 대응
-- **usehooks-ts** — useMediaQuery, useLocalStorage 등 검증된 유틸리티 훅
-- **ESLint & TypeScript** — 코드 품질 관리
+- **다크모드 지원** — next-themes로 구현된 라이트/다크/시스템 테마 전환
+- **URL 검증** — Notion 페이지 ID 유효성 검증 및 정규화
+- **에러 처리** — 사용자 친화적 에러 메시지 및 404 페이지
 
 ## 📁 폴더 구조
 
 ```
-src/
-├── app/                      # Next.js App Router
-│   ├── layout.tsx            # 루트 레이아웃 (헤더, 푸터 포함)
-│   ├── page.tsx              # 홈 페이지
-│   ├── globals.css           # 전역 스타일 (TailwindCSS, 테마 변수)
-│   ├── loading.tsx           # 라우트 레벨 로딩 UI
-│   ├── error.tsx             # 에러 바운더리
-│   └── not-found.tsx         # 404 페이지
-├── components/
-│   ├── ui/                   # shadcn UI 원자 컴포넌트 (button, card, input 등)
-│   ├── layout/               # 레이아웃 컴포넌트
-│   │   ├── header.tsx        # 상단 헤더 (로고, 네비, 테마 토글)
-│   │   ├── footer.tsx        # 하단 푸터
-│   │   ├── container.tsx     # max-width 래퍼
-│   │   ├── mobile-nav.tsx    # Sheet 기반 모바일 메뉴
-│   │   └── theme-toggle.tsx  # 다크모드 토글
-│   ├── patterns/             # 재사용 가능한 컴포넌트 패턴
-│   │   ├── hero.tsx          # 히어로 섹션
-│   │   ├── feature-grid.tsx  # 기능 그리드
-│   │   ├── page-header.tsx   # 페이지 타이틀
-│   │   └── empty-state.tsx   # 빈 상태 표시
-│   └── theme-provider.tsx    # next-themes 래퍼
-└── lib/
-    ├── utils.ts              # 유틸리티 함수 (cn() 클래스 병합)
-    └── hooks/                # 커스텀 훅 (필요시 추가)
+invoice-web/
+├── src/
+│   ├── app/                          # Next.js App Router
+│   │   ├── page.tsx                 # 홈페이지 (견적서 조회)
+│   │   ├── invoice/
+│   │   │   └── [notionPageId]/
+│   │   │       └── page.tsx         # 견적서 상세 페이지
+│   │   ├── layout.tsx               # 루트 레이아웃 (헤더, 푸터)
+│   │   ├── error.tsx                # 에러 경계
+│   │   ├── not-found.tsx            # 404 페이지
+│   │   └── globals.css              # 전역 스타일 (TailwindCSS, 테마 변수)
+│   ├── components/
+│   │   ├── ui/                      # shadcn UI 컴포넌트 (Button, Card, Input 등)
+│   │   ├── layout/                  # 레이아웃 컴포넌트
+│   │   │   ├── header.tsx          # 상단 헤더
+│   │   │   ├── footer.tsx          # 하단 푸터
+│   │   │   ├── container.tsx       # max-width 래퍼
+│   │   │   ├── theme-toggle.tsx    # 다크모드 토글
+│   │   │   └── mobile-nav.tsx      # 모바일 네비게이션
+│   │   ├── patterns/                # 재사용 가능한 패턴
+│   │   │   ├── page-header.tsx     # 페이지 헤더
+│   │   │   └── empty-state.tsx     # 빈 상태 표시
+│   │   ├── invoice/                 # 견적서 관련 컴포넌트
+│   │   │   ├── invoice-detail.tsx  # 견적서 상세 표시
+│   │   │   └── invoice-lookup.tsx  # 견적서 조회 폼
+│   │   └── theme-provider.tsx       # next-themes 래퍼
+│   └── lib/
+│       ├── notion.ts                # Notion API 클라이언트
+│       ├── types.ts                 # TypeScript 타입 정의
+│       ├── format.ts                # 날짜 및 통화 포맷팅
+│       └── utils.ts                 # 유틸리티 함수 (cn() 등)
+├── public/                          # 정적 자산
+├── .env.example                     # 환경 변수 템플릿
+├── package.json
+├── tsconfig.json
+├── tailwind.config.ts
+├── next.config.ts
+├── CLAUDE.md                        # 개발자 가이드
+└── README.md
 ```
 
 ## 🚀 시작하기
 
-### 1. 프로젝트 설정
+### 필수 조건
+
+- Node.js 18+
+- npm 또는 yarn
+- Notion API 키
+
+### 1. 설치
 
 ```bash
+# 저장소 클론
+git clone https://github.com/dlsrbChoi/invoice-web.git
+cd invoice-web
+
 # 의존성 설치
 npm install
 
-# 개발 서버 실행
+# 환경 변수 설정
+cp .env.example .env.local
+```
+
+### 2. Notion API 키 설정
+
+`.env.local` 파일에 Notion API 키를 설정하세요:
+
+```env
+NOTION_API_KEY=your_notion_api_key_here
+```
+
+Notion API 키는 [Notion Integrations](https://www.notion.so/my-integrations)에서 생성할 수 있습니다.
+
+### 3. 개발 서버 실행
+
+```bash
 npm run dev
 ```
 
 브라우저에서 [http://localhost:3000](http://localhost:3000)을 열면 애플리케이션이 실행됩니다.
 
-### 2. 새 페이지 만들기
+## 💡 사용 방법
 
-`src/app` 디렉토리에 새 폴더를 만들고 `page.tsx` 파일을 추가하면 자동으로 라우트가 생성됩니다.
+1. **Notion 데이터베이스 생성** — 견적서 정보를 저장할 Notion 데이터베이스 생성
+2. **Integration 권한 설정** — Notion Integration에 데이터베이스 접근 권한 부여
+3. **페이지 ID 복사** — Notion 견적서 페이지의 URL에서 페이지 ID 추출
+4. **웹에서 조회** — 홈페이지에서 페이지 ID 또는 URL 입력
+5. **PDF 다운로드** — "PDF 다운로드" 버튼 또는 브라우저 인쇄 기능으로 저장
+
+## 🏗️ 프로젝트 구조
+
+### Notion API 연동
+
+`src/lib/notion.ts`에서 Notion API 기능을 제공합니다:
 
 ```tsx
-// src/app/about/page.tsx
-import { PageHeader } from '@/components/patterns/page-header'
+import { getInvoiceFromNotion, normalizeNotionPageId } from '@/lib/notion'
 
-export default function About() {
-  return (
-    <>
-      <PageHeader 
-        title="About Us"
-        description="We are building amazing products"
-      />
-      {/* 콘텐츠 추가 */}
-    </>
-  )
-}
+// 페이지 ID 정규화 (하이픈 추가/제거)
+const normalizedId = normalizeNotionPageId(pageId)
+
+// Notion에서 견적서 데이터 조회
+const invoice = await getInvoiceFromNotion(normalizedId)
 ```
 
-### 3. 컴포넌트 사용
+### 타입 정의
+
+`src/lib/types.ts`에서 TypeScript 타입을 제공합니다:
 
 ```tsx
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-
-export default function Example() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>제목</CardTitle>
-        <CardDescription>설명</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button>클릭하세요</Button>
-      </CardContent>
-    </Card>
-  )
+interface Invoice {
+  id: string
+  title: string
+  clientName: string
+  items: InvoiceItem[]
+  totalAmount: number
+  status: 'draft' | 'sent' | 'viewed' | 'paid'
+  // ... 더 많은 필드
 }
 ```
 
@@ -120,116 +157,88 @@ oklch 포맷의 CSS 변수를 수정하여 색상을 커스터마이징할 수 �
 }
 ```
 
-## 📦 설치된 라이브러리
+## 📦 주요 의존성
 
-- **프레임워크**: Next.js 16, React 19, TypeScript
-- **스타일**: TailwindCSS v4
+- **프레임워크**: Next.js 16, React 19, TypeScript 5
+- **스타일**: TailwindCSS v4, oklch 색상 시스템
 - **UI**: ShadcnUI (base-nova 스타일, @base-ui/react 기반)
 - **아이콘**: lucide-react
-- **테마**: next-themes
-- **알림**: sonner (toast)
-- **유틸리티**: 
-  - clsx + tailwind-merge (클래스 병합)
-  - class-variance-authority (컴포넌트 변형)
-  - usehooks-ts (useMediaQuery, useLocalStorage 등)
+- **테마**: next-themes (라이트/다크/시스템 모드)
+- **유틸리티**: clsx + tailwind-merge, class-variance-authority
 
-## 🔧 개발 팁
-
-### useMediaQuery로 반응형 처리
-
-```tsx
-'use client'
-
-import { useMediaQuery } from 'usehooks-ts'
-
-export function ResponsiveComponent() {
-  const isDesktop = useMediaQuery('(min-width: 768px)')
-  
-  return isDesktop ? <DesktopLayout /> : <MobileLayout />
-}
-```
-
-### useLocalStorage로 로컬 저장소 사용
-
-```tsx
-'use client'
-
-import { useLocalStorage } from 'usehooks-ts'
-
-export function Counter() {
-  const [count, setCount] = useLocalStorage('count', 0)
-  
-  return (
-    <div>
-      Count: {count}
-      <button onClick={() => setCount(count + 1)}>증가</button>
-    </div>
-  )
-}
-```
-
-### toast 알림 사용
-
-```tsx
-import { Toaster, toast } from 'sonner'
-
-// layout.tsx에 Toaster 추가
-export default function Layout() {
-  return (
-    <>
-      <main>{/* ... */}</main>
-      <Toaster />
-    </>
-  )
-}
-
-// 사용
-function MyComponent() {
-  return (
-    <button onClick={() => toast.success('성공했습니다!')}>
-      알림 보기
-    </button>
-  )
-}
-```
-
-## 📚 추가 컴포넌트 설치
-
-shadcn UI에서 더 많은 컴포넌트를 설치할 수 있습니다:
+## 🔧 개발 명령어
 
 ```bash
-npx shadcn@latest add select
-npx shadcn@latest add tabs
-npx shadcn@latest add table
-# ... 등등
-```
+# 개발 서버 실행
+npm run dev
 
-## ✅ 빌드 및 배포
-
-```bash
 # 프로덕션 빌드
 npm run build
 
-# 빌드된 애플리케이션 실행
+# 빌드된 앱 실행
 npm run start
 
-# 린트 검사
+# ESLint 실행
 npm run lint
 ```
+
+## 🚀 배포
+
+### Vercel 배포
+
+```bash
+# Vercel CLI 설치
+npm i -g vercel
+
+# 배포
+vercel
+```
+
+환경 변수를 Vercel 프로젝트 설정에 추가하세요.
+
+### Docker 배포
+
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+## 🐛 트러블슈팅
+
+### "NOTION_API_KEY 환경 변수가 설정되지 않았습니다"
+
+- `.env.local` 파일이 프로젝트 루트에 있는지 확인
+- `NOTION_API_KEY` 값을 입력했는지 확인
+- 개발 서버를 재시작해보세요 (`npm run dev`)
+
+### "유효하지 않은 페이지 ID"
+
+- Notion 페이지 URL에서 올바른 페이지 ID 추출 확인
+- 페이지 ID는 32자 16진수 또는 UUID 형식이어야 합니다
+- Integration에 해당 페이지에 대한 접근 권한이 있는지 확인
 
 ## 📖 참고 자료
 
 - [Next.js 문서](https://nextjs.org/docs)
-- [React 문서](https://react.dev)
+- [Notion API 문서](https://developers.notion.com)
 - [TailwindCSS 문서](https://tailwindcss.com/docs)
 - [shadcn/ui 문서](https://ui.shadcn.com)
-- [next-themes 문서](https://github.com/pacocoursey/next-themes)
-- [usehooks-ts 문서](https://usehooks-ts.com)
+- [React 문서](https://react.dev)
 
 ## 📄 라이선스
 
 MIT License
 
+## 기여
+
+버그 리포트 및 기능 제안은 [Issues](https://github.com/dlsrbChoi/invoice-web/issues)에서 해주세요.
+
 ---
 
-이 스타터킷을 기반으로 멋진 프로젝트를 만들어보세요! 😎
+**Made with ❤️ for Invoice Management**
