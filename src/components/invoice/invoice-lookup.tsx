@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { normalizeNotionPageId } from '@/lib/notion'
+import { normalizeNotionPageId, NotionInvalidPageIdError } from '@/lib/notion'
 import { AlertCircle, ArrowRight } from 'lucide-react'
 
 export function InvoiceLookup() {
@@ -14,7 +14,7 @@ export function InvoiceLookup() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
     setIsLoading(true)
@@ -26,7 +26,14 @@ export function InvoiceLookup() {
       // 견적서 페이지로 이동
       router.push(`/invoice/${normalizedId}`)
     } catch (err) {
-      const message = err instanceof Error ? err.message : '유효하지 않은 URL입니다'
+      let message = '유효하지 않은 URL입니다'
+
+      if (err instanceof NotionInvalidPageIdError) {
+        message = err.message
+      } else if (err instanceof Error) {
+        message = err.message
+      }
+
       setError(message)
       setIsLoading(false)
     }
@@ -39,8 +46,9 @@ export function InvoiceLookup() {
     // 예: https://www.notion.so/My-Database-123456789?v=xyz -> 123456789
     // 또는 직접 페이지 ID 입력 가능
     if (value.includes('notion.so')) {
+      // Notion URL에서 32자 16진수 ID 추출
       const match = value.match(/notion\.so\/[^?]*-([a-f0-9]{32})/i)
-      if (match) {
+      if (match && match[1]) {
         setPageId(match[1])
       } else {
         setPageId(value)

@@ -43,7 +43,7 @@ export interface NotionPageBlock {
   has_children: boolean
   archived: boolean
   type: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface NotionDatabase {
@@ -66,7 +66,7 @@ export interface NotionDatabase {
       link: string | null
     }
   }>
-  description: any[]
+  description: unknown[]
   icon: null | {
     type: string
     emoji: string
@@ -77,7 +77,7 @@ export interface NotionDatabase {
       url: string
     }
   }
-  properties: Record<string, any>
+  properties: Record<string, unknown>
   parent: {
     type: string
     page_id?: string

@@ -4,7 +4,6 @@ import { Invoice } from '@/lib/types'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { Download, Mail } from 'lucide-react'
 import { formatDate, formatCurrency } from '@/lib/format'
 
@@ -55,7 +54,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
             </p>
           </div>
           <div className="flex flex-col items-start md:items-end gap-2">
-            <Badge variant={getStatusBadgeVariant(invoice.status) as any}>
+            <Badge variant={getStatusBadgeVariant(invoice.status)}>
               {getStatusLabel(invoice.status)}
             </Badge>
             <p className="text-sm text-muted-foreground">
