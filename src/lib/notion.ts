@@ -3,16 +3,16 @@
  * Notion 데이터베이스에서 견적서 데이터를 가져오는 기능
  */
 
-import type { Invoice, InvoiceItem, NotionPageData } from './types'
-import { getMockInvoice } from './mock-data'
+import type { Invoice, InvoiceItem, NotionPageData } from './types';
+import { getMockInvoice } from './mock-data';
 import {
   parseInvoiceFromNotionPage,
   parseInvoiceItemFromNotionPage,
   extractRelationFromProperty,
-} from './notion-parser'
+} from './notion-parser';
 
-const NOTION_API_VERSION = '2022-06-28'
-const NOTION_API_BASE_URL = 'https://api.notion.com/v1'
+const NOTION_API_VERSION = '2022-06-28';
+const NOTION_API_BASE_URL = 'https://api.notion.com/v1';
 
 /**
  * Notion API Property 이름 상수화
@@ -38,36 +38,36 @@ const NOTION_PROPERTY_KEYS = {
     unitPrice: 'unit_price',
     amount: 'amount',
   },
-}
+};
 
 /**
  * Notion API 관련 커스텀 에러 클래스들
  */
 export class NotionAPIError extends Error {
   constructor(message: string) {
-    super(message)
-    this.name = 'NotionAPIError'
+    super(message);
+    this.name = 'NotionAPIError';
   }
 }
 
 export class NotionPageNotFoundError extends NotionAPIError {
   constructor(pageId: string) {
-    super(`요청하신 견적서(${pageId})를 찾을 수 없습니다`)
-    this.name = 'NotionPageNotFoundError'
+    super(`요청하신 견적서(${pageId})를 찾을 수 없습니다`);
+    this.name = 'NotionPageNotFoundError';
   }
 }
 
 export class NotionInvalidPageIdError extends NotionAPIError {
   constructor(pageId: string) {
-    super(`유효하지 않은 Notion 페이지 ID입니다: ${pageId}`)
-    this.name = 'NotionInvalidPageIdError'
+    super(`유효하지 않은 Notion 페이지 ID입니다: ${pageId}`);
+    this.name = 'NotionInvalidPageIdError';
   }
 }
 
 export class NotionConfigError extends NotionAPIError {
   constructor(message: string = 'NOTION_API_KEY 환경 변수가 설정되지 않았습니다') {
-    super(message)
-    this.name = 'NotionConfigError'
+    super(message);
+    this.name = 'NotionConfigError';
   }
 }
 
@@ -75,16 +75,16 @@ export class NotionConfigError extends NotionAPIError {
  * Notion API 요청을 위한 기본 헤더 생성
  */
 function getNotionHeaders(): Record<string, string> {
-  const apiKey = process.env.NOTION_API_KEY
+  const apiKey = process.env.NOTION_API_KEY;
   if (!apiKey) {
-    throw new NotionConfigError()
+    throw new NotionConfigError();
   }
 
   return {
     Authorization: `Bearer ${apiKey}`,
     'Notion-Version': NOTION_API_VERSION,
     'Content-Type': 'application/json',
-  }
+  };
 }
 
 /**
@@ -100,35 +100,37 @@ function getNotionHeaders(): Record<string, string> {
 export async function getInvoiceFromNotion(pageId: string): Promise<Invoice> {
   try {
     // 페이지 ID 정규화 및 검증
-    const normalizedPageId = normalizeNotionPageId(pageId)
+    const normalizedPageId = normalizeNotionPageId(pageId);
 
     // 먼저 더미 데이터가 있는지 확인
-    const mockInvoice = getMockInvoice(normalizedPageId)
+    const mockInvoice = getMockInvoice(normalizedPageId);
     if (mockInvoice) {
-      return mockInvoice
+      return mockInvoice;
     }
 
     // Notion API에서 페이지 정보 조회
-    const pageData = await fetchNotionPage(normalizedPageId)
+    const pageData = await fetchNotionPage(normalizedPageId);
 
     // 기본 견적서 정보 파싱
-    const invoice = parseInvoiceFromNotionPage(pageData as NotionPageData)
+    const invoice = parseInvoiceFromNotionPage(pageData as NotionPageData);
 
     // Relation 필드에서 항목들 로드
-    const items = await parseInvoiceItems(pageData as NotionPageData)
-    invoice.items = items
+    const items = await parseInvoiceItems(pageData as NotionPageData);
+    invoice.items = items;
 
     // 총액 재계산
-    invoice.totalAmount = items.reduce((sum, item) => sum + item.amount, 0)
+    invoice.totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
 
-    return invoice
+    return invoice;
   } catch (error) {
-    console.error('Notion 견적서 조회 중 오류 발생:', error)
+    console.error('Notion 견적서 조회 중 오류 발생:', error);
     // 이미 우리의 커스텀 에러라면 그대로 throw, 아니면 래핑
     if (error instanceof NotionAPIError) {
-      throw error
+      throw error;
     }
-    throw new NotionAPIError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다')
+    throw new NotionAPIError(
+      error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다'
+    );
   }
 }
 
@@ -142,19 +144,21 @@ async function fetchNotionPage(pageId: string): Promise<NotionPageData> {
   const response = await fetch(`${NOTION_API_BASE_URL}/pages/${pageId}`, {
     method: 'GET',
     headers: getNotionHeaders(),
-  })
+  });
 
   if (!response.ok) {
     if (response.status === 404) {
-      throw new NotionPageNotFoundError(pageId)
+      throw new NotionPageNotFoundError(pageId);
     }
     if (response.status === 403) {
-      throw new NotionAPIError(`이 페이지에 접근할 수 있는 권한이 없습니다. Notion Integration 권한을 확인하세요.`)
+      throw new NotionAPIError(
+        `이 페이지에 접근할 수 있는 권한이 없습니다. Notion Integration 권한을 확인하세요.`
+      );
     }
-    throw new NotionAPIError(`Notion API 오류: ${response.statusText}`)
+    throw new NotionAPIError(`Notion API 오류: ${response.statusText}`);
   }
 
-  return response.json()
+  return response.json();
 }
 
 /**
@@ -165,33 +169,35 @@ async function fetchNotionPage(pageId: string): Promise<NotionPageData> {
  * @returns 견적서 항목 배열
  */
 async function parseInvoiceItems(pageData: NotionPageData): Promise<InvoiceItem[]> {
-  const items: InvoiceItem[] = []
+  const items: InvoiceItem[] = [];
 
   try {
     // Relation 필드에서 연결된 항목 페이지 ID 추출
-    const itemsRelation = extractRelationFromProperty(pageData.properties[NOTION_PROPERTY_KEYS.invoices.itemsRelation])
+    const itemsRelation = extractRelationFromProperty(
+      pageData.properties[NOTION_PROPERTY_KEYS.invoices.itemsRelation]
+    );
 
     if (!itemsRelation || itemsRelation.length === 0) {
-      return items
+      return items;
     }
 
     // 각 항목 페이지 조회 및 파싱
     for (const itemPageId of itemsRelation) {
       try {
-        const itemPageData = await fetchNotionPage(itemPageId)
-        const item = parseInvoiceItemFromNotionPage(itemPageData as NotionPageData)
-        items.push(item)
+        const itemPageData = await fetchNotionPage(itemPageId);
+        const item = parseInvoiceItemFromNotionPage(itemPageData as NotionPageData);
+        items.push(item);
       } catch (error) {
-        console.warn(`항목 페이지 조회 실패 (${itemPageId}):`, error)
+        console.warn(`항목 페이지 조회 실패 (${itemPageId}):`, error);
         // 개별 항목 실패해도 계속 진행
       }
     }
   } catch (error) {
-    console.warn('항목 파싱 중 경고:', error)
+    console.warn('항목 파싱 중 경고:', error);
     // 항목 로드 실패해도 견적서는 반환
   }
 
-  return items
+  return items;
 }
 
 /**
@@ -207,14 +213,14 @@ async function parseInvoiceItems(pageData: NotionPageData): Promise<InvoiceItem[
  */
 export function normalizeNotionPageId(pageId: string): string {
   if (!pageId || typeof pageId !== 'string') {
-    throw new NotionInvalidPageIdError(pageId)
+    throw new NotionInvalidPageIdError(pageId);
   }
 
-  const trimmed = pageId.trim()
+  const trimmed = pageId.trim();
 
   // URL에서 페이지 ID 추출
   // https://www.notion.so/{title}-{id}?pvs=21 형식
-  let extractedId = trimmed
+  let extractedId = trimmed;
   if (trimmed.includes('notion.so')) {
     // 여러 URL 형식 지원
     // 1. https://www.notion.so/3b4fd32770e480ac86b4f2337df0a16e?pvs=21
@@ -222,31 +228,31 @@ export function normalizeNotionPageId(pageId: string): string {
     // 3. https://app.notion.com/p/3b4fd32770e480ac86b4f2337df0a16e?pvs=21
 
     // 마지막 하이픈 이후의 32자 hex ID 찾기
-    const match = trimmed.match(/(?:^|-)([a-f0-9]{32})(?:\?|$|\/)/i)
+    const match = trimmed.match(/(?:^|-)([a-f0-9]{32})(?:\?|$|\/)/i);
     if (match) {
-      extractedId = match[1]
+      extractedId = match[1];
     } else {
       // 다른 형식: 마지막 슬래시 이후의 문자 추출
-      const parts = trimmed.split('/')
-      const lastPart = parts[parts.length - 1]
+      const parts = trimmed.split('/');
+      const lastPart = parts[parts.length - 1];
       // 쿼리 파라미터 제거
-      const cleanedPart = lastPart.split('?')[0]
+      const cleanedPart = lastPart.split('?')[0];
       // 마지막 하이픈으로 분할
-      const segments = cleanedPart.split('-')
+      const segments = cleanedPart.split('-');
       if (segments.length > 0) {
-        extractedId = segments[segments.length - 1]
+        extractedId = segments[segments.length - 1];
       }
     }
   }
 
   // 하이픈 제거하여 정규화
-  const cleaned = extractedId.replace(/-/g, '')
+  const cleaned = extractedId.replace(/-/g, '');
 
   // 32자 hex 확인
   if (cleaned.length !== 32 || !/^[a-f0-9]{32}$/i.test(cleaned)) {
-    throw new NotionInvalidPageIdError(pageId)
+    throw new NotionInvalidPageIdError(pageId);
   }
 
   // 표준 UUID 형식으로 변환: 8-4-4-4-12
-  return `${cleaned.substring(0, 8)}-${cleaned.substring(8, 12)}-${cleaned.substring(12, 16)}-${cleaned.substring(16, 20)}-${cleaned.substring(20)}`
+  return `${cleaned.substring(0, 8)}-${cleaned.substring(8, 12)}-${cleaned.substring(12, 16)}-${cleaned.substring(16, 20)}-${cleaned.substring(20)}`;
 }

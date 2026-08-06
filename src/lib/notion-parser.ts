@@ -15,76 +15,76 @@ import type {
   NotionNumberProperty,
   NotionEmailProperty,
   NotionRelationProperty,
-} from './types'
-import { INVOICE_STATUS_MAP } from './types'
+} from './types';
+import { INVOICE_STATUS_MAP } from './types';
 
 /**
  * Notion 텍스트 속성(Title, Rich Text)에서 평문 추출
  */
 export function extractTextFromProperty(prop: NotionProperty | undefined): string | null {
-  if (!prop) return null
+  if (!prop) return null;
 
-  const textProp = prop as NotionTextProperty
+  const textProp = prop as NotionTextProperty;
 
   if (textProp.type === 'title' && textProp.title?.length) {
-    return textProp.title.map((t) => t.plain_text).join('')
+    return textProp.title.map((t) => t.plain_text).join('');
   }
 
   if (textProp.type === 'rich_text' && textProp.rich_text?.length) {
-    return textProp.rich_text.map((t) => t.plain_text).join('')
+    return textProp.rich_text.map((t) => t.plain_text).join('');
   }
 
-  return null
+  return null;
 }
 
 /**
  * Notion 이메일 속성에서 이메일 주소 추출
  */
 export function extractEmailFromProperty(prop: NotionProperty | undefined): string | null {
-  if (!prop || prop.type !== 'email') return null
+  if (!prop || prop.type !== 'email') return null;
 
-  const emailProp = prop as NotionEmailProperty
-  return emailProp.email ?? null
+  const emailProp = prop as NotionEmailProperty;
+  return emailProp.email ?? null;
 }
 
 /**
  * Notion 숫자 속성에서 숫자 추출
  */
 export function extractNumberFromProperty(prop: NotionProperty | undefined): number | null {
-  if (!prop || prop.type !== 'number') return null
+  if (!prop || prop.type !== 'number') return null;
 
-  const numProp = prop as NotionNumberProperty
-  return numProp.number ?? null
+  const numProp = prop as NotionNumberProperty;
+  return numProp.number ?? null;
 }
 
 /**
  * Notion Select 속성에서 선택값 추출
  */
 export function extractSelectFromProperty(prop: NotionProperty | undefined): string | null {
-  if (!prop || prop.type !== 'select') return null
+  if (!prop || prop.type !== 'select') return null;
 
-  const selectProp = prop as NotionSelectProperty
-  return selectProp.select?.name ?? null
+  const selectProp = prop as NotionSelectProperty;
+  return selectProp.select?.name ?? null;
 }
 
 /**
  * Notion Date 속성에서 날짜 추출
  */
 export function extractDateFromProperty(prop: NotionProperty | undefined): string | null {
-  if (!prop || prop.type !== 'date') return null
+  if (!prop || prop.type !== 'date') return null;
 
-  const dateProp = prop as NotionDateProperty
-  return dateProp.date?.start ?? null
+  const dateProp = prop as NotionDateProperty;
+  return dateProp.date?.start ?? null;
 }
 
 /**
  * Notion Relation 속성에서 관련 페이지 ID 배열 추출
  */
 export function extractRelationFromProperty(prop: NotionProperty | undefined): string[] {
-  if (!prop || prop.type !== 'relation') return []
+  if (!prop || prop.type !== 'relation') return [];
 
-  const relProp = prop as NotionRelationProperty
-  return relProp.relation.map((r) => r.id)
+  const relProp = prop as NotionRelationProperty;
+  return relProp.relation.map((r) => r.id);
 }
 
 /**
@@ -96,16 +96,16 @@ export function extractRelationFromProperty(prop: NotionProperty | undefined): s
  * @throws {Error} 숫자로 변환할 수 없는 형식
  */
 export function parseAmount(amountStr: string): number {
-  if (!amountStr) return 0
+  if (!amountStr) return 0;
 
-  const numericStr = amountStr.replace(/[^\d\-]/g, '')
-  const parsed = parseInt(numericStr, 10)
+  const numericStr = amountStr.replace(/[^\d\-]/g, '');
+  const parsed = parseInt(numericStr, 10);
 
   if (isNaN(parsed)) {
-    throw new Error(`금액 형식을 인식할 수 없습니다: ${amountStr}`)
+    throw new Error(`금액 형식을 인식할 수 없습니다: ${amountStr}`);
   }
 
-  return parsed
+  return parsed;
 }
 
 /**
@@ -121,30 +121,30 @@ export function parseAmount(amountStr: string): number {
  */
 export function parseDateToISO(dateStr: string): string {
   if (!dateStr) {
-    return new Date().toISOString().split('T')[0]
+    return new Date().toISOString().split('T')[0];
   }
 
-  const trimmed = dateStr.trim()
+  const trimmed = dateStr.trim();
 
   // 한글 포맷: "2026년 8월 1일"
-  const koreanMatch = trimmed.match(/(\d{4})년\s+(\d{1,2})월\s+(\d{1,2})일/)
+  const koreanMatch = trimmed.match(/(\d{4})년\s+(\d{1,2})월\s+(\d{1,2})일/);
   if (koreanMatch) {
-    const [, year, month, day] = koreanMatch
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    const [, year, month, day] = koreanMatch;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
 
   // ISO 포맷: "2026-08-01"
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    return trimmed
+    return trimmed;
   }
 
   // 영문 및 기타 포맷 (JavaScript Date로 파싱)
-  const date = new Date(trimmed)
+  const date = new Date(trimmed);
   if (!isNaN(date.getTime())) {
-    return date.toISOString().split('T')[0]
+    return date.toISOString().split('T')[0];
   }
 
-  throw new Error(`날짜 형식을 인식할 수 없습니다: ${dateStr}`)
+  throw new Error(`날짜 형식을 인식할 수 없습니다: ${dateStr}`);
 }
 
 /**
@@ -155,19 +155,19 @@ export function parseDateToISO(dateStr: string): string {
  * @returns 정규화된 InvoiceStatus
  */
 export function normalizeStatus(statusStr: string): InvoiceStatus {
-  if (!statusStr) return 'draft'
+  if (!statusStr) return 'draft';
 
-  const normalized = statusStr.toLowerCase().trim()
+  const normalized = statusStr.toLowerCase().trim();
 
   // 괄호 안 설명 제거: "draft (작성 중)" → "draft"
-  const baseStatus = normalized.split('(')[0].trim()
+  const baseStatus = normalized.split('(')[0].trim();
 
   // 매핑 테이블에서 찾기
   const mapped = Object.entries(INVOICE_STATUS_MAP).find(([key]) =>
     key.toLowerCase().startsWith(baseStatus)
-  )
+  );
 
-  return mapped ? mapped[1] : 'draft'
+  return mapped ? mapped[1] : 'draft';
 }
 
 /**
@@ -178,47 +178,65 @@ export function normalizeStatus(statusStr: string): InvoiceStatus {
  * @returns 파싱된 Invoice 객체
  */
 export function parseInvoiceFromNotionPage(pageData: NotionPageData): Invoice {
-  const props = pageData.properties
+  const props = pageData.properties;
 
   // 필수 필드 추출
-  const title = extractTextFromProperty(props['제목']) ?? extractTextFromProperty(props['title']) ?? 'Untitled'
+  const title =
+    extractTextFromProperty(props['제목']) ?? extractTextFromProperty(props['title']) ?? 'Untitled';
   const clientName =
-    extractTextFromProperty(props['client_name']) ?? extractTextFromProperty(props['클라이언트']) ?? 'Unknown Client'
-  const clientEmail = extractEmailFromProperty(props['client_email']) ?? extractTextFromProperty(props['이메일']) ?? ''
-  const invoiceNumber = extractTextFromProperty(props['invoice_number']) ?? extractTextFromProperty(props['번호']) ?? ''
+    extractTextFromProperty(props['client_name']) ??
+    extractTextFromProperty(props['클라이언트']) ??
+    'Unknown Client';
+  const clientEmail =
+    extractEmailFromProperty(props['client_email']) ??
+    extractTextFromProperty(props['이메일']) ??
+    '';
+  const invoiceNumber =
+    extractTextFromProperty(props['invoice_number']) ??
+    extractTextFromProperty(props['번호']) ??
+    '';
 
   // 날짜 파싱
-  let issueDate: string
-  const issueDateProp = extractDateFromProperty(props['issue_date']) ?? extractDateFromProperty(props['발급일'])
+  let issueDate: string;
+  const issueDateProp =
+    extractDateFromProperty(props['issue_date']) ?? extractDateFromProperty(props['발급일']);
   if (issueDateProp) {
-    issueDate = parseDateToISO(issueDateProp)
+    issueDate = parseDateToISO(issueDateProp);
   } else {
-    issueDate = new Date().toISOString().split('T')[0]
+    issueDate = new Date().toISOString().split('T')[0];
   }
 
-  let validUntil: string
-  const validUntilProp = extractDateFromProperty(props['valid_until']) ?? extractDateFromProperty(props['유효기간'])
+  let validUntil: string;
+  const validUntilProp =
+    extractDateFromProperty(props['valid_until']) ?? extractDateFromProperty(props['유효기간']);
   if (validUntilProp) {
-    validUntil = parseDateToISO(validUntilProp)
+    validUntil = parseDateToISO(validUntilProp);
   } else {
-    validUntil = issueDate
+    validUntil = issueDate;
   }
 
   // 상태 파싱
-  const statusStr = extractSelectFromProperty(props['status']) ?? extractSelectFromProperty(props['상태']) ?? 'draft'
-  const status = normalizeStatus(statusStr)
+  const statusStr =
+    extractSelectFromProperty(props['status']) ??
+    extractSelectFromProperty(props['상태']) ??
+    'draft';
+  const status = normalizeStatus(statusStr);
 
   // 항목 (임시 빈 배열 - Task 006에서 Relation 로드)
-  const items: InvoiceItem[] = []
+  const items: InvoiceItem[] = [];
 
   // 총액 계산 (임시)
-  const totalAmount = items.reduce((sum, item) => sum + item.amount, 0)
+  const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
 
   // 비고
-  const notes = extractTextFromProperty(props['notes']) ?? extractTextFromProperty(props['비고']) ?? ''
+  const notes =
+    extractTextFromProperty(props['notes']) ?? extractTextFromProperty(props['비고']) ?? '';
 
   // 통화 (기본값: KRW)
-  const currency = extractSelectFromProperty(props['통화']) ?? extractSelectFromProperty(props['currency']) ?? 'KRW'
+  const currency =
+    extractSelectFromProperty(props['통화']) ??
+    extractSelectFromProperty(props['currency']) ??
+    'KRW';
 
   return {
     id: pageData.id,
@@ -236,7 +254,7 @@ export function parseInvoiceFromNotionPage(pageData: NotionPageData): Invoice {
     status,
     createdAt: pageData.created_time,
     updatedAt: pageData.last_edited_time,
-  }
+  };
 }
 
 /**
@@ -246,36 +264,43 @@ export function parseInvoiceFromNotionPage(pageData: NotionPageData): Invoice {
  * @returns 파싱된 InvoiceItem 객체
  */
 export function parseInvoiceItemFromNotionPage(pageData: NotionPageData): InvoiceItem {
-  const props = pageData.properties
+  const props = pageData.properties;
 
   // 필수 필드 추출
-  const title = extractTextFromProperty(props['제목']) ?? extractTextFromProperty(props['title']) ?? 'Untitled'
-  const description = extractTextFromProperty(props['description']) ?? extractTextFromProperty(props['설명']) ?? ''
-  const quantity = extractNumberFromProperty(props['quantity']) ?? extractNumberFromProperty(props['수량']) ?? 1
+  const title =
+    extractTextFromProperty(props['제목']) ?? extractTextFromProperty(props['title']) ?? 'Untitled';
+  const description =
+    extractTextFromProperty(props['description']) ?? extractTextFromProperty(props['설명']) ?? '';
+  const quantity =
+    extractNumberFromProperty(props['quantity']) ?? extractNumberFromProperty(props['수량']) ?? 1;
 
   // 단가 (숫자 또는 통화 형식)
-  let unitPrice = 0
-  const unitPriceProp = extractNumberFromProperty(props['unit_price']) ?? extractNumberFromProperty(props['단가'])
+  let unitPrice = 0;
+  const unitPriceProp =
+    extractNumberFromProperty(props['unit_price']) ?? extractNumberFromProperty(props['단가']);
   if (typeof unitPriceProp === 'number') {
-    unitPrice = unitPriceProp
+    unitPrice = unitPriceProp;
   } else {
-    const unitPriceStr = extractTextFromProperty(props['unit_price']) ?? extractTextFromProperty(props['단가']) ?? '0'
-    unitPrice = parseAmount(unitPriceStr)
+    const unitPriceStr =
+      extractTextFromProperty(props['unit_price']) ?? extractTextFromProperty(props['단가']) ?? '0';
+    unitPrice = parseAmount(unitPriceStr);
   }
 
   // 총액 (선택적 - 계산으로 재산출 가능)
-  let amount = 0
-  const amountProp = extractNumberFromProperty(props['amount']) ?? extractNumberFromProperty(props['총액'])
+  let amount = 0;
+  const amountProp =
+    extractNumberFromProperty(props['amount']) ?? extractNumberFromProperty(props['총액']);
   if (typeof amountProp === 'number') {
-    amount = amountProp
+    amount = amountProp;
   } else {
-    const amountStr = extractTextFromProperty(props['amount']) ?? extractTextFromProperty(props['총액']) ?? '0'
-    amount = parseAmount(amountStr)
+    const amountStr =
+      extractTextFromProperty(props['amount']) ?? extractTextFromProperty(props['총액']) ?? '0';
+    amount = parseAmount(amountStr);
   }
 
   // 만약 amount가 0이면 quantity × unitPrice로 계산
   if (amount === 0) {
-    amount = quantity * unitPrice
+    amount = quantity * unitPrice;
   }
 
   return {
@@ -285,5 +310,5 @@ export function parseInvoiceItemFromNotionPage(pageData: NotionPageData): Invoic
     quantity,
     unitPrice,
     amount,
-  }
+  };
 }
