@@ -75,7 +75,7 @@
 
 ## 개발 단계
 
-### Phase 1: 애플리케이션 골격 구축 ✅
+### Phase 1: 애플리케이션 골격 구축 ✅ (완료)
 
 - **Task 001: 프로젝트 구조 및 라우팅 설정** ✅ - 완료
   - ✅ Next.js App Router 기반 전체 라우트 구조 생성 (`src/app/`)
@@ -91,10 +91,18 @@
   - ✅ 견적서 상태 유니온 타입 정의 (`'draft' | 'sent' | 'viewed' | 'paid'`)
   - ✅ TypeScript strict mode 활성화 및 타입 체크 통과 확인
   - ✅ 노션 데이터베이스 스키마 설계 문서화 (`docs/PRD.md` 데이터 모델 섹션, 구현 제외)
+  
+  **추가 작업: 타입 정의 재설계 및 정규화** ✅
+  - ✅ Notion 데이터베이스 실제 구조 분석 및 현재 타입 정의 재검토
+  - ✅ `invoice-parser.ts` 유틸리티 함수 생성 (`parseAmount()`, `parseDateToISO()`, `normalizeStatus()` 등)
+  - ✅ Invoice 인터페이스 필드 정규화: `dueDate` → `validUntil`, `invoiceNumber` 필드 추가
+  - ✅ InvoiceItem 인터페이스 필드 정규화: `name` → `title`, `amount` 필드 추가
+  - ✅ Notion 데이터 구조 타입 정의 강화 (`NotionProperty`, `NotionPageData`, `NotionDatabaseItem` 등)
+  - ✅ TypeScript 빌드 성공 및 ESLint 검증 완료
 
 ---
 
-### Phase 2: UI/UX 완성 (더미 데이터 활용)
+### Phase 2: UI/UX 완성 (더미 데이터 활용) ✅ (완료)
 
 - **Task 003: 공통 컴포넌트 라이브러리 구현** ✅ - 완료
   - ✅ shadcn/ui 기반 UI 컴포넌트 구성 (`Button`, `Card`, `Input`, `Badge`, `Separator`, `Alert`, `Skeleton`, `Dialog`, `Sonner` 등)
@@ -103,41 +111,41 @@
   - ✅ `cn()` 클래스 병합 유틸리티 및 CVA 기반 변형 패턴 적용 (`src/lib/utils.ts`)
   - ✅ `globals.css`에 oklch 색상 변수 및 라이트/다크 모드 정의, `next-themes` 연동
 
-- **Task 004: 견적서 화면 UI 완성 (더미 데이터)** - 우선순위
-  - `src/lib/mock-data.ts` 생성 — `Invoice` 타입을 만족하는 더미 견적서 2~3건 (항목 다수, 항목 0건, 장문 비고 케이스 포함)
-  - `InvoiceDetail` 컴포넌트를 더미 데이터로 렌더링하여 전체 레이아웃 확정 (헤더 / 청구 대상 / 항목 테이블 / 합계 / 액션)
-  - `InvoiceLookup` 홈 화면 폼 UI 확정 — 노션 페이지 ID 및 노션 URL 입력, 입력 형식 안내 문구 표시
-  - 항목 테이블 모바일 대응 — 좁은 화면에서 가로 스크롤(`overflow-x-auto`) 또는 카드형 전환 처리
-  - 로딩 상태 UI 구현 — `Skeleton` 기반 견적서 스켈레톤을 `loading.tsx`에 연결
-  - 404/에러 화면 UI 구현 — `not-found.tsx`에 "견적서를 찾을 수 없습니다" 및 발행자 문의 안내 메시지 배치
-  - 인쇄/PDF 전용 스타일 기초 작업 — 헤더/푸터/버튼 영역에 `print:hidden` 적용
+- **Task 004: 견적서 화면 UI 완성 (더미 데이터)** ✅ - 완료
+  - ✅ `src/lib/mock-data.ts` 생성 — `Invoice` 타입을 만족하는 더미 견적서 2~3건 (항목 다수, 항목 0건, 장문 비고 케이스 포함)
+  - ✅ `InvoiceDetail` 컴포넌트를 더미 데이터로 렌더링하여 전체 레이아웃 확정 (헤더 / 청구 대상 / 항목 테이블 / 합계 / 액션)
+  - ✅ `InvoiceLookup` 홈 화면 폼 UI 확정 — 노션 페이지 ID 및 노션 URL 입력, 입력 형식 안내 문구 표시
+  - ✅ 항목 테이블 모바일 대응 — 좁은 화면에서 가로 스크롤(`overflow-x-auto`) 또는 카드형 전환 처리
+  - ✅ 로딩 상태 UI 구현 — `Skeleton` 기반 견적서 스켈레톤을 `loading.tsx`에 연결
+  - ✅ 404/에러 화면 UI 구현 — `not-found.tsx`에 "견적서를 찾을 수 없습니다" 및 발행자 문의 안내 메시지 배치
+  - ✅ 인쇄/PDF 전용 스타일 기초 작업 — 헤더/푸터/버튼 영역에 `print:hidden` 적용
 
   **테스트 체크리스트 (Playwright MCP)**
-  - 홈(`/`) 접속 시 `InvoiceLookup` 폼과 안내 문구가 노출되는지 확인
-  - 더미 데이터 기반 견적서 화면에서 항목/총액/발행일/유효기간이 모두 렌더링되는지 확인
-  - 뷰포트 375px(모바일) / 768px(태블릿) / 1280px(데스크톱)에서 레이아웃 깨짐 및 가로 스크롤 발생 여부 검증
-  - 라이트/다크 모드 전환 시 대비 및 가독성 확인 (스크린샷 비교)
-  - 항목 0건 더미 데이터에서 "항목이 없습니다" 빈 상태가 표시되는지 확인
+  - ✅ 홈(`/`) 접속 시 `InvoiceLookup` 폼과 안내 문구가 노출되는지 확인
+  - ✅ 더미 데이터 기반 견적서 화면에서 항목/총액/발행일/유효기간이 모두 렌더링되는지 확인
+  - ✅ 뷰포트 375px(모바일) / 768px(태블릿) / 1280px(데스크톱)에서 레이아웃 깨짐 및 가로 스크롤 발생 여부 검증
+  - ✅ 라이트/다크 모드 전환 시 대비 및 가독성 확인 (스크린샷 비교)
+  - ✅ 항목 0건 더미 데이터에서 "항목이 없습니다" 빈 상태가 표시되는지 확인
 
 ---
 
-### Phase 3: 핵심 기능 구현
+### Phase 3: 핵심 기능 구현 (진행 중)
 
-- **Task 005: Notion 연동 기반 구축 및 URL 규칙 확립**
-  - `@notionhq/client` 의존성 추가 및 `src/lib/notion.ts`를 공식 SDK 기반으로 정리 (현재 fetch 구현 대체 또는 유지 결정)
-  - 환경 변수 구성 — `.env.local`에 `NOTION_API_KEY`, `NOTION_DATABASE_ID` 설정 및 `.env.example` 생성
-  - 환경 변수 누락 시 개발자 친화적 에러 메시지 반환 로직 정비 (`getNotionHeaders()`)
-  - `normalizeNotionPageId()` 확장 — 32자 hex, 하이픈 포함 UUID, **노션 전체 URL**(`https://notion.so/Title-xxxx`) 3가지 입력 형식 모두 정규화
-  - `InvoiceLookup` 제출 시 `/invoice/[notionPageId]`로 라우팅하는 URL 생성 로직 연결 (F010)
-  - Notion Integration 연결 및 데이터베이스 권한 부여 절차를 `docs/`에 정리
+- **Task 005: Notion 연동 기반 구축 및 URL 규칙 확립** ✅ - 완료
+  - ✅ `@notionhq/client` 의존성 추가 및 `src/lib/notion.ts`를 공식 SDK 기반으로 정리 (현재 fetch 구현 대체 또는 유지 결정)
+  - ✅ 환경 변수 구성 — `.env.local`에 `NOTION_API_KEY`, `NOTION_DATABASE_ID` 설정 및 `.env.example` 생성
+  - ✅ 환경 변수 누락 시 개발자 친화적 에러 메시지 반환 로직 정비 (`getNotionHeaders()`)
+  - ✅ `normalizeNotionPageId()` 확장 — 32자 hex, 하이픈 포함 UUID, **노션 전체 URL**(`https://notion.so/Title-xxxx`) 3가지 입력 형식 모두 정규화
+  - ✅ `InvoiceLookup` 제출 시 `/invoice/[notionPageId]`로 라우팅하는 URL 생성 로직 연결 (F010)
+  - ✅ Notion Integration 연결 및 데이터베이스 권한 부여 절차를 `docs/`에 정리
 
   **테스트 체크리스트 (Playwright MCP)**
-  - 홈 폼에 32자 hex ID 입력 → `/invoice/[id]`로 정상 이동 확인
-  - 하이픈 포함 UUID 입력 → 동일 견적서로 정규화되어 이동하는지 확인
-  - 노션 전체 URL 입력 → 페이지 ID만 추출되어 이동하는지 확인
-  - 형식이 잘못된 문자열 입력 → 폼 단계에서 검증 에러 메시지 노출 확인
+  - ✅ 홈 폼에 32자 hex ID 입력 → `/invoice/[id]`로 정상 이동 확인
+  - ✅ 하이픈 포함 UUID 입력 → 동일 견적서로 정규화되어 이동하는지 확인
+  - ✅ 노션 전체 URL 입력 → 페이지 ID만 추출되어 이동하는지 확인
+  - ✅ 형식이 잘못된 문자열 입력 → 폼 단계에서 검증 에러 메시지 노출 확인
 
-- **Task 006: 견적서 데이터 조회 및 파싱 구현 (F001, F002)**
+- **Task 006: 견적서 데이터 조회 및 파싱 구현 (F001, F002)** (우선순위)
   - `getInvoiceFromNotion()` 서버 컴포넌트 호출 경로 완성 및 더미 데이터 → 실제 API 응답으로 교체
   - `parseInvoiceFromNotionPage()` 구현 — PRD 데이터 모델(견적서 번호, 클라이언트명, 발행일, 유효기간, 상태, 총 금액) 기준으로 노션 property 매핑
   - `parseInvoiceItems()` 구현 — 노션 Relation(Items 데이터베이스) 또는 테이블 블록에서 항목별 `description`/`quantity`/`unit_price`/`amount` 추출
