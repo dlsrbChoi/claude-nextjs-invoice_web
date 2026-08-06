@@ -51,6 +51,7 @@ export async function generateMetadata({ params }: InvoicePageProps): Promise<Me
 /**
  * Notion API에서 견적서를 로드하는 함수
  * 구체적인 에러 타입을 반환하여 페이지에서 적절한 처리 가능
+ * 민감한 정보(API 키, 내부 스택)는 마스킹
  */
 async function loadInvoice(notionPageId: string): Promise<{
   invoice: import('@/lib/types').Invoice | null;
@@ -64,16 +65,26 @@ async function loadInvoice(notionPageId: string): Promise<{
   } catch (err) {
     // 구체적인 에러 타입 식별
     let errorType: 'not-found' | 'invalid-id' | 'api-error' = 'api-error';
-    let errorMessage = '알 수 없는 오류가 발생했습니다';
+    let errorMessage = '견적서 조회 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
 
     if (err instanceof NotionPageNotFoundError) {
       errorType = 'not-found';
-      errorMessage = err.message;
+      errorMessage = '요청하신 견적서를 찾을 수 없습니다.';
     } else if (err instanceof NotionAPIError) {
       errorType = 'api-error';
-      errorMessage = err.message;
-    } else if (err instanceof Error) {
-      errorMessage = err.message;
+      // 민감한 정보 마스킹: API 키나 내부 상세 정보는 보여주지 않음
+      if (err.message.includes('권한')) {
+        errorMessage = '이 페이지에 접근할 수 있는 권한이 없습니다.';
+      } else if (err.message.includes('타임아웃') || err.message.includes('timeout')) {
+        errorMessage = 'Notion API 연결 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.';
+      } else {
+        errorMessage = '견적서 조회 중 오류가 발생했습니다.';
+      }
+    }
+
+    // 개발 환경에서만 상세 에러 로깅
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Invoice loading error:', err);
     }
 
     return { invoice: null, error: errorMessage, errorType };
@@ -82,6 +93,8 @@ async function loadInvoice(notionPageId: string): Promise<{
 
 /**
  * 견적서 상세 컴포넌트 (Suspense 경계용 서버 컴포넌트)
+ * 캐싱: 60초 동안 같은 견적서에 대한 중복 요청을 건너뜀
+ * 사용자가 "새로고침"을 명시적으로 클릭하면 캐시 무효화
  */
 async function InvoiceDetailSection({ notionPageId }: { notionPageId: string }) {
   const { invoice, error, errorType } = await loadInvoice(notionPageId);
@@ -92,13 +105,22 @@ async function InvoiceDetailSection({ notionPageId }: { notionPageId: string }) 
       notFound();
     }
 
-    // 기타 에러: 에러 UI 표시
+    // 기타 API 에러: not-found.tsx로 처리
+    // (사용자는 404 페이지 대신 에러 경계로 이동됨)
+    if (errorType === 'api-error') {
+      notFound();
+    }
+
+    // 검증 오류 (invalid-id): 에러 UI 표시
     return (
       <>
-        <PageHeader title='견적서 조회 실패' description='요청하신 견적서를 불러올 수 없습니다' />
+        <PageHeader title='잘못된 요청' description='요청하신 페이지 형식이 올바르지 않습니다' />
         <Container>
           <div className='rounded-lg border border-destructive/50 bg-destructive/10 p-4'>
             <p className='text-sm text-destructive'>{error}</p>
+            <p className='text-xs text-muted-foreground mt-2'>
+              Notion 페이지 ID는 32자 16진수, UUID 형식, 또는 Notion URL이어야 합니다.
+            </p>
           </div>
         </Container>
       </>

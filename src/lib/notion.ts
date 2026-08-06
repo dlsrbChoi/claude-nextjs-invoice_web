@@ -88,6 +88,16 @@ function getNotionHeaders(): Record<string, string> {
 }
 
 /**
+ * fetch 캐싱 옵션 설정
+ * Next.js 자동 캐싱: 60초 동안 중복 요청 제거 (ISR)
+ */
+function getFetchCacheOptions() {
+  return {
+    next: { revalidate: 60 }, // 60초마다 재검증
+  };
+}
+
+/**
  * Notion 페이지 ID에서 견적서 정보를 조회
  * Notion API를 통해 실제 데이터를 로드하며, 항목들도 함께 조회
  *
@@ -135,7 +145,7 @@ export async function getInvoiceFromNotion(pageId: string): Promise<Invoice> {
 }
 
 /**
- * Notion 페이지 정보 조회
+ * Notion 페이지 정보 조회 (캐싱 포함)
  *
  * @throws {NotionPageNotFoundError} 404 응답 (페이지 없음)
  * @throws {NotionAPIError} 기타 API 오류
@@ -144,6 +154,7 @@ async function fetchNotionPage(pageId: string): Promise<NotionPageData> {
   const response = await fetch(`${NOTION_API_BASE_URL}/pages/${pageId}`, {
     method: 'GET',
     headers: getNotionHeaders(),
+    ...getFetchCacheOptions(),
   });
 
   if (!response.ok) {

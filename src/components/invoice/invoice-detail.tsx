@@ -7,12 +7,19 @@ import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/layout/container';
 import { Download, Mail } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/lib/format';
+import { toast } from 'sonner';
 
 interface InvoiceDetailProps {
   invoice: Invoice;
 }
 
 export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
+  const handleDownloadPDF = () => {
+    // 브라우저의 인쇄 기능 사용하여 PDF 다운로드
+    // (인쇄 미리보기 → PDF로 저장 옵션 사용)
+    window.print();
+    toast.success('인쇄 대화상자가 열렸습니다. "PDF로 저장"을 선택하세요.');
+  };
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'draft':
@@ -171,11 +178,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
 
         {/* 액션 버튼 */}
         <div className='flex flex-col sm:flex-row gap-3 print:hidden'>
-          <Button
-            onClick={() => window.print()}
-            variant='default'
-            className='gap-2 w-full sm:w-auto'
-          >
+          <Button onClick={handleDownloadPDF} variant='default' className='gap-2 w-full sm:w-auto'>
             <Download className='h-4 w-4' />
             PDF 다운로드
           </Button>
