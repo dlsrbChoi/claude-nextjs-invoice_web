@@ -181,29 +181,31 @@ function parseInvoiceFromNotionPage(
   const properties = pageData.properties || {}
 
   // 기본 정보 추출 (property 이름은 실제 Notion 데이터베이스 구조에 맞게 수정 필요)
-  const title = extractTextProperty(properties, 'title') || 'Untitled Invoice'
-  const clientName = extractTextProperty(properties, '클라이언트') || 'Client'
-  const clientEmail = extractTextProperty(properties, '이메일') || ''
-  const issueDate = extractDateProperty(properties, '발급일') || new Date().toISOString().split('T')[0]
-  const dueDate = extractDateProperty(properties, '납기일') || issueDate
-  const notes = extractTextProperty(properties, '비고') || ''
-  const currency = extractSelectProperty(properties, '통화') || 'KRW'
-  const status = (extractSelectProperty(properties, '상태') || 'draft') as 'draft' | 'sent' | 'viewed' | 'paid'
+  const title = extractTextProperty(properties, 'title') || extractTextProperty(properties, '제목') || 'Untitled Invoice'
+  const invoiceNumber = extractTextProperty(properties, 'invoice_number') || extractTextProperty(properties, '번호') || ''
+  const clientName = extractTextProperty(properties, 'client_name') || extractTextProperty(properties, '클라이언트') || 'Client'
+  const clientEmail = extractTextProperty(properties, 'client_email') || extractTextProperty(properties, '이메일') || ''
+  const issueDate = extractDateProperty(properties, 'issue_date') || extractDateProperty(properties, '발급일') || new Date().toISOString().split('T')[0]
+  const validUntil = extractDateProperty(properties, 'valid_until') || extractDateProperty(properties, '유효기간') || issueDate
+  const notes = extractTextProperty(properties, 'notes') || extractTextProperty(properties, '비고') || ''
+  const currency = extractSelectProperty(properties, 'currency') || extractSelectProperty(properties, '통화') || 'KRW'
+  const status = (extractSelectProperty(properties, 'status') || extractSelectProperty(properties, '상태') || 'draft') as 'draft' | 'sent' | 'viewed' | 'paid'
 
   // 항목 정보 추출 (블록에서 테이블이나 리스트 형식으로 저장된 항목들)
   const items = parseInvoiceItems(blocks)
 
   // 총액 계산
-  const totalAmount = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+  const totalAmount = items.reduce((sum, item) => sum + item.amount, 0)
 
   return {
     id: pageData.id,
     notionPageId: pageData.id,
     title,
+    invoiceNumber,
     clientName,
     clientEmail,
     issueDate,
-    dueDate,
+    validUntil,
     items,
     notes,
     totalAmount,

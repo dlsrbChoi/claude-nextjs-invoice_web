@@ -116,53 +116,79 @@ async function InvoiceDetailSection({ notionPageId }: { notionPageId: string }) 
   )
 }
 
-/**
- * Suspense 폴백 컴포넌트: 로딩 상태 표시
- */
-function InvoicePageLoading() {
-  return (
-    <>
-      <div className="bg-muted/50 py-12 print:hidden">
-        <Container>
-          <Skeleton className="h-10 w-2/3 mb-2" />
-          <Skeleton className="h-5 w-1/2" />
-        </Container>
-      </div>
-
-      <Container className="py-8">
-        <div className="space-y-6">
-          <Card className="p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="flex-1">
-                <Skeleton className="h-8 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
-              <div className="flex flex-col items-start md:items-end gap-2">
-                <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <Skeleton className="h-6 w-32 mb-4" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          </Card>
-        </div>
-      </Container>
-    </>
-  )
-}
 
 export default async function InvoicePage({ params }: InvoicePageProps) {
   const { notionPageId } = await params
 
   return (
-    <Suspense fallback={<InvoicePageLoading />}>
+    <Suspense fallback={<InvoiceLoadingSkeleton />}>
       <InvoiceDetailSection notionPageId={notionPageId} />
     </Suspense>
+  )
+}
+
+/**
+ * Suspense 폴백 컴포넌트: 로딩 상태 표시
+ * loading.tsx와 동일한 구조이며, Suspense 경계용으로 사용됩니다.
+ */
+function InvoiceLoadingSkeleton() {
+  return (
+    <div className="print:hidden">
+      {/* 페이지 헤더 스켈레톤 */}
+      <div className="bg-muted/30 py-8 md:py-12">
+        <Container>
+          <div className="space-y-2">
+            <Skeleton className="h-8 md:h-10 w-3/4" />
+            <Skeleton className="h-5 w-1/2" />
+          </div>
+        </Container>
+      </div>
+
+      {/* 콘텐츠 영역 */}
+      <Container className="py-8">
+        <div className="space-y-6">
+          {/* 헤더 카드 스켈레톤 */}
+          <Card className="p-6">
+            <Skeleton className="h-7 w-3/4 mb-3" />
+            <Skeleton className="h-4 w-1/2" />
+          </Card>
+
+          {/* 청구 대상 카드 스켈레톤 */}
+          <Card className="p-6">
+            <Skeleton className="h-4 w-24 mb-4" />
+            <div className="space-y-3">
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          </Card>
+
+          {/* 항목 카드 스켈레톤 */}
+          <Card className="p-6">
+            <Skeleton className="h-4 w-16 mb-4" />
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="border border-border rounded-lg p-4 space-y-3">
+                  <Skeleton className="h-4 w-2/3" />
+                  <div className="grid grid-cols-3 gap-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* 합계 카드 스켈레톤 */}
+          <Card className="p-6 bg-muted/50">
+            <Skeleton className="h-4 w-16 mb-2" />
+            <Skeleton className="h-8 w-48" />
+          </Card>
+
+          {/* 액션 버튼 스켈레톤 */}
+          <Skeleton className="h-10 w-32" />
+        </div>
+      </Container>
+    </div>
   )
 }

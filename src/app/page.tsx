@@ -19,7 +19,7 @@ export default function Home() {
         title="견적서 조회"
         description="노션 견적서 링크를 통해 작성하신 견적서를 조회하고 PDF로 다운로드할 수 있습니다."
       />
-      <Container>
+      <Container className="py-8">
         <InvoiceLookup />
       </Container>
     </>
