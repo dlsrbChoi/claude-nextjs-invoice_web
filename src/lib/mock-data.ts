@@ -1,0 +1,100 @@
+import { Invoice } from './types'
+
+export const mockInvoices: Invoice[] = [
+  {
+    id: 'mock-001',
+    notionPageId: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6',
+    title: '웹사이트 리디자인 프로젝트',
+    clientName: '아름다운 카페 주식회사',
+    clientEmail: 'contact@beautifulcafe.com',
+    issueDate: '2026-08-01',
+    dueDate: '2026-08-31',
+    items: [
+      {
+        id: 'item-1',
+        name: 'UI/UX 디자인',
+        quantity: 1,
+        unitPrice: 500000,
+        description: '메인페이지 및 서브페이지 UI/UX 디자인 (10페이지)',
+      },
+      {
+        id: 'item-2',
+        name: 'React 프론트엔드 개발',
+        quantity: 2,
+        unitPrice: 300000,
+        description: '리액트 기반 프론트엔드 개발 (80시간 기준)',
+      },
+      {
+        id: 'item-3',
+        name: 'Node.js 백엔드 개발',
+        quantity: 1,
+        unitPrice: 400000,
+        description: 'REST API 개발 및 데이터베이스 설계',
+      },
+      {
+        id: 'item-4',
+        name: '배포 및 운영 가이드',
+        quantity: 1,
+        unitPrice: 150000,
+        description: 'Vercel 배포, 모니터링 설정, 운영 매뉴얼 작성',
+      },
+    ],
+    notes: '결제 조건: 계약금 50%, 완료 시 50% 잔금\n호스팅 비용(연간 $120)은 별도 청구됩니다.\n유효 기간: 30일',
+    totalAmount: 2150000,
+    currency: 'KRW',
+    status: 'sent',
+    createdAt: '2026-08-01T10:00:00Z',
+    updatedAt: '2026-08-01T10:00:00Z',
+  },
+  {
+    id: 'mock-002',
+    notionPageId: 'b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7',
+    title: '모바일 앱 개발 제안',
+    clientName: '스타트업 Inc.',
+    clientEmail: 'founder@startup.io',
+    issueDate: '2026-08-03',
+    dueDate: '2026-09-02',
+    items: [
+      {
+        id: 'item-5',
+        name: 'iOS 앱 개발',
+        quantity: 1,
+        unitPrice: 1200000,
+        description: 'Swift 기반 iOS 네이티브 앱 (60시간)',
+      },
+      {
+        id: 'item-6',
+        name: 'Android 앱 개발',
+        quantity: 1,
+        unitPrice: 1200000,
+        description: 'Kotlin 기반 Android 네이티브 앱 (60시간)',
+      },
+    ],
+    notes: '프로젝트 일정: 8월 - 10월\n마일스톤: 기능 설계(1주), 개발(8주), 테스트 및 배포(1주)',
+    totalAmount: 2400000,
+    currency: 'KRW',
+    status: 'draft',
+    createdAt: '2026-08-03T14:30:00Z',
+    updatedAt: '2026-08-03T14:30:00Z',
+  },
+  {
+    id: 'mock-003',
+    notionPageId: 'c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8',
+    title: '블로그 테마 커스터마이징',
+    clientName: '성공적인 블로거',
+    clientEmail: 'blogger@example.com',
+    issueDate: '2026-08-05',
+    dueDate: '2026-08-20',
+    items: [],
+    notes: '',
+    totalAmount: 0,
+    currency: 'KRW',
+    status: 'viewed',
+    createdAt: '2026-08-05T09:15:00Z',
+    updatedAt: '2026-08-05T09:15:00Z',
+  },
+]
+
+export function getMockInvoice(notionPageId: string): Invoice | undefined {
+  return mockInvoices.find((invoice) => invoice.notionPageId === notionPageId)
+}

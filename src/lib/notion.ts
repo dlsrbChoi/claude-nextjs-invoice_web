@@ -4,6 +4,7 @@
  */
 
 import type { Invoice, InvoiceItem, NotionPageBlock } from './types'
+import { getMockInvoice } from './mock-data'
 
 const NOTION_API_VERSION = '2022-06-28'
 const NOTION_API_BASE_URL = 'https://api.notion.com/v1'
@@ -26,12 +27,20 @@ function getNotionHeaders(): Record<string, string> {
 
 /**
  * Notion 페이지 ID에서 견적서 정보를 조회
+ * 현재는 더미 데이터를 반환하며, Task 006에서 실제 Notion API 연동으로 변경됨
  */
 export async function getInvoiceFromNotion(pageId: string): Promise<Invoice> {
   try {
     // 페이지 ID 유효성 검증
     if (!isValidNotionPageId(pageId)) {
       throw new Error('유효하지 않은 페이지 ID입니다')
+    }
+
+    // TODO: Task 006에서 실제 Notion API 호출로 변경
+    // 현재는 더미 데이터 반환
+    const mockInvoice = getMockInvoice(pageId)
+    if (mockInvoice) {
+      return mockInvoice
     }
 
     // Notion API에서 페이지 정보 조회
