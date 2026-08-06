@@ -1,4 +1,4 @@
-import { Invoice } from './types'
+import { Invoice } from './types';
 
 export const mockInvoices: Invoice[] = [
   {
@@ -86,8 +86,8 @@ export const mockInvoices: Invoice[] = [
     createdAt: '2026-08-05T09:15:00Z',
     updatedAt: '2026-08-05T09:15:00Z',
   },
-]
+];
 
 export function getMockInvoice(notionPageId: string): Invoice | undefined {
-  return mockInvoices.find((invoice) => invoice.notionPageId === notionPageId)
+  return mockInvoices.find((invoice) => invoice.notionPageId === notionPageId);
 }
