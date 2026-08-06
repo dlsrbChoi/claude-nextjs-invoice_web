@@ -161,3 +161,17 @@
     @apply shadow-none;
   }
 }
+
+/**
+ * 테이블 기본 스타일
+ */
+@layer components {
+  table {
+    @apply w-full border-collapse;
+  }
+
+  th,
+  td {
+    @apply align-middle;
+  }
+}

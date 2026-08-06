@@ -4,6 +4,7 @@ import { Invoice, InvoiceItem } from '@/lib/types'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Container } from '@/components/layout/container'
 import { Download, Mail } from 'lucide-react'
 import { formatDate, formatCurrency } from '@/lib/format'
 
@@ -43,8 +44,9 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
   }
 
   return (
-    <div className="space-y-6 print:space-y-4">
-      {/* 헤더 */}
+    <Container>
+      <div className="space-y-6 print:space-y-4">
+        {/* 헤더 */}
       <Card className="p-6 print:border-0 print:bg-transparent print:p-0 print:shadow-none">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="flex-1">
@@ -87,17 +89,17 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left font-semibold py-3 px-0">품명</th>
-                <th className="text-right font-semibold py-3 px-0">수량</th>
-                <th className="text-right font-semibold py-3 px-0">단가</th>
-                <th className="text-right font-semibold py-3 px-0">합계</th>
+                <th className="text-left font-semibold py-4 px-2 md:px-4">품명</th>
+                <th className="text-right font-semibold py-4 px-2 md:px-4">수량</th>
+                <th className="text-right font-semibold py-4 px-2 md:px-4">단가</th>
+                <th className="text-right font-semibold py-4 px-2 md:px-4">합계</th>
               </tr>
             </thead>
             <tbody>
               {invoice.items.length > 0 ? (
                 invoice.items.map((item) => (
                   <tr key={item.id} className="border-b border-border hover:bg-muted/50 print:hover:bg-transparent">
-                    <td className="py-4 px-0">
+                    <td className="py-5 px-2 md:px-4">
                       <div>
                         <p className="font-medium">{item.title}</p>
                         {item.description && (
@@ -105,9 +107,9 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
                         )}
                       </div>
                     </td>
-                    <td className="text-right py-4 px-0">{item.quantity}</td>
-                    <td className="text-right py-4 px-0">{formatCurrency(item.unitPrice, invoice.currency)}</td>
-                    <td className="text-right py-4 px-0 font-medium">
+                    <td className="text-right py-5 px-2 md:px-4">{item.quantity}</td>
+                    <td className="text-right py-5 px-2 md:px-4">{formatCurrency(item.unitPrice, invoice.currency)}</td>
+                    <td className="text-right py-5 px-2 md:px-4 font-medium">
                       {formatCurrency(item.amount, invoice.currency)}
                     </td>
                   </tr>
@@ -170,6 +172,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
         </Button>
       </div>
     </div>
+    </Container>
   )
 }
 
