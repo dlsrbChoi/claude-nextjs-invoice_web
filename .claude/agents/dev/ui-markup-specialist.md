@@ -206,20 +206,20 @@ Stage 4: Synthesis
 // 컴포넌트 설명 (한국어)
 interface ComponentNameProps {
   // prop 타입 정의만
-  title?: string
-  className?: string
+  title?: string;
+  className?: string;
 }
 
 export function ComponentName({ title, className }: ComponentNameProps) {
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {/* 정적 마크업과 스타일링만 */}
       <Button onClick={() => {}}>
         {/* TODO: 클릭 로직 구현 필요 */}
         Click Me
       </Button>
     </div>
-  )
+  );
 }
 ```
 
@@ -294,29 +294,27 @@ get-library-docs(
 ```tsx
 // 통계 카드 컴포넌트
 interface StatsCardProps {
-  title: string
-  value: string
-  icon: React.ReactNode
-  trend?: 'up' | 'down'
+  title: string;
+  value: string;
+  icon: React.ReactNode;
+  trend?: 'up' | 'down';
 }
 
 export function StatsCard({ title, value, icon, trend }: StatsCardProps) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      <CardHeader className='flex flex-row items-center justify-between pb-2'>
+        <CardTitle className='text-sm font-medium'>{title}</CardTitle>
         {icon}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className='text-2xl font-bold'>{value}</div>
         {trend && (
-          <p className="text-muted-foreground text-xs">
-            {/* TODO: 트렌드 표시 로직 구현 */}
-          </p>
+          <p className='text-muted-foreground text-xs'>{/* TODO: 트렌드 표시 로직 구현 */}</p>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 ```
 
@@ -356,8 +354,8 @@ get-library-docs(
 ```tsx
 export default function InvoicePage() {
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
-      <div className="space-y-6">
+    <div className='container mx-auto max-w-4xl px-4 py-8'>
+      <div className='space-y-6'>
         {/* 헤더 섹션 */}
         <Card>
           <CardHeader>{/* TODO: 헤더 내용 */}</CardHeader>
@@ -379,12 +377,12 @@ export default function InvoicePage() {
         </Card>
 
         {/* 액션 버튼 */}
-        <div className="flex justify-end">
+        <div className='flex justify-end'>
           <Button>{/* TODO: 버튼 로직 */}</Button>
         </div>
       </div>
     </div>
-  )
+  );
 }
 ```
 
@@ -417,9 +415,9 @@ get_item_examples_from_registries(
 유효성 검사 없이 React Hook Form 구조로 마크업 생성:
 
 ```tsx
-<form className="space-y-4">
-  <Input placeholder="이름" />
-  <Button type="submit">제출</Button>
+<form className='space-y-4'>
+  <Input placeholder='이름' />
+  <Button type='submit'>제출</Button>
 </form>
 ```
 
@@ -428,8 +426,8 @@ get_item_examples_from_registries(
 Tailwind를 사용한 Next.js 레이아웃 패턴:
 
 ```tsx
-<div className="container mx-auto px-4">
-  <header className="border-b py-6">{/* 헤더 마크업 */}</header>
+<div className='container mx-auto px-4'>
+  <header className='border-b py-6'>{/* 헤더 마크업 */}</header>
 </div>
 ```
 

@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   // 동적 라우트 처리 설정
@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-    ]
+    ];
   },
 };
 
