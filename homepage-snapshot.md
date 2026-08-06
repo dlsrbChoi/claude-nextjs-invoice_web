@@ -1,0 +1,18 @@
+- generic [active] [ref=f1e1]:
+  - banner [ref=f1e2]:
+    - generic [ref=f1e3]:
+      - heading "견적서 관리 시스템" [level=1] [ref=f1e4]
+      - button "테마 전환" [ref=f1e5]
+  - main [ref=f1e7]:
+    - generic [ref=f1e9]:
+      - heading "견적서 조회" [level=1] [ref=f1e10]
+      - paragraph [ref=f1e11]: 노션 견적서 링크를 통해 작성하신 견적서를 조회하고 PDF로 다운로드할 수 있습니다.
+    - generic [ref=f1e14]:
+      - generic [ref=f1e15]
+      - generic [ref=f1e23]
+  - contentinfo [ref=f1e35]:
+    - generic [ref=f1e36]:
+      - separator [ref=f1e37]
+      - paragraph [ref=f1e39]: © 2024 노션 기반 견적서 관리 시스템. All rights reserved.
+  - button "Open Next.js Dev Tools" [ref=f1e45] [cursor=pointer]
+  - alert [ref=f1e49]
