@@ -128,3 +128,36 @@
     @apply font-sans;
   }
 }
+
+/**
+ * 인쇄 스타일
+ */
+@media print {
+  @page {
+    margin: 1cm;
+    size: A4;
+  }
+
+  body {
+    @apply bg-white text-black;
+  }
+
+  /* 페이지 나누기 방지 */
+  .invoice-header,
+  .invoice-client,
+  .invoice-items,
+  .invoice-total {
+    page-break-inside: avoid;
+  }
+
+  /* 링크는 밑줄 제거 */
+  a {
+    @apply no-underline text-foreground;
+  }
+
+  /* 그림자 제거 */
+  .shadow,
+  [class*="shadow-"] {
+    @apply shadow-none;
+  }
+}

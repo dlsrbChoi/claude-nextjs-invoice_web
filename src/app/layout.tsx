@@ -4,7 +4,6 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { Container } from "@/components/layout/container";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const geistSans = Geist({
@@ -38,7 +37,7 @@ export default function RootLayout({
           <TooltipProvider>
             <Header />
             <main className="flex-1">
-              <Container>{children}</Container>
+              {children}
             </main>
             <Footer />
           </TooltipProvider>
