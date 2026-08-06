@@ -112,13 +112,13 @@ npm run dev
 `src/lib/notion.ts`에서 Notion API 기능을 제공합니다:
 
 ```tsx
-import { getInvoiceFromNotion, normalizeNotionPageId } from '@/lib/notion'
+import { getInvoiceFromNotion, normalizeNotionPageId } from '@/lib/notion';
 
 // 페이지 ID 정규화 (하이픈 추가/제거)
-const normalizedId = normalizeNotionPageId(pageId)
+const normalizedId = normalizeNotionPageId(pageId);
 
 // Notion에서 견적서 데이터 조회
-const invoice = await getInvoiceFromNotion(normalizedId)
+const invoice = await getInvoiceFromNotion(normalizedId);
 ```
 
 ### 타입 정의
@@ -127,12 +127,12 @@ const invoice = await getInvoiceFromNotion(normalizedId)
 
 ```tsx
 interface Invoice {
-  id: string
-  title: string
-  clientName: string
-  items: InvoiceItem[]
-  totalAmount: number
-  status: 'draft' | 'sent' | 'viewed' | 'paid'
+  id: string;
+  title: string;
+  clientName: string;
+  items: InvoiceItem[];
+  totalAmount: number;
+  status: 'draft' | 'sent' | 'viewed' | 'paid';
   // ... 더 많은 필드
 }
 ```

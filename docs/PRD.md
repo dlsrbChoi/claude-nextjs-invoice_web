@@ -218,14 +218,14 @@ NOTION_DATABASE_ID=xxxxxxxxxxxxx
 
 ```typescript
 // app/invoice/[id]/page.tsx
-import { Client } from '@notionhq/client'
+import { Client } from '@notionhq/client';
 
-const notion = new Client({ auth: process.env.NOTION_API_KEY })
+const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 async function getInvoice(pageId: string) {
-  const page = await notion.pages.retrieve({ page_id: pageId })
-  const blocks = await notion.blocks.children.list({ block_id: pageId })
-  return { page, blocks }
+  const page = await notion.pages.retrieve({ page_id: pageId });
+  const blocks = await notion.blocks.children.list({ block_id: pageId });
+  return { page, blocks };
 }
 ```
 

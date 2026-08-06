@@ -243,6 +243,7 @@ src/app/
 ```
 
 **원칙:**
+
 - 기본: **Server Component** (데이터 페칭, SSR)
 - 필요시: **Client Component** (`'use client'` 지시어)
   - 상태 관리 (useState, useReducer)
@@ -303,7 +304,7 @@ const buttonVariants = cva('inline-flex items-center justify-center', {
       outline: 'border border-input bg-white dark:bg-slate-950',
     },
   },
-})
+});
 ```
 
 ---
@@ -326,6 +327,7 @@ const buttonVariants = cva('inline-flex items-center justify-center', {
 ```
 
 **보안 원칙:**
+
 - ✅ API 키는 서버 사이드에서만 사용
 - ❌ 클라이언트 번들에 API 키 포함 금지
 - ✅ 모든 Notion API 호출은 백엔드에서 처리
@@ -334,11 +336,11 @@ const buttonVariants = cva('inline-flex items-center justify-center', {
 
 ```typescript
 // ❌ 잘못된 방법 - 민감 정보 노출
-console.error('Notion API Error:', error.message) // "401: Unauthorized - Invalid API Key"
+console.error('Notion API Error:', error.message); // "401: Unauthorized - Invalid API Key"
 
 // ✅ 올바른 방법 - 마스킹
-console.error('Notion API Error: 인증 실패')
-return { error: '견적서 조회에 실패했습니다. 잠시 후 다시 시도해주세요.' }
+console.error('Notion API Error: 인증 실패');
+return { error: '견적서 조회에 실패했습니다. 잠시 후 다시 시도해주세요.' };
 ```
 
 ---
@@ -380,6 +382,7 @@ src/lib/types.ts
 ```
 
 **strict mode 활성화**
+
 ```json
 {
   "compilerOptions": {
@@ -427,13 +430,13 @@ Production URL
 
 ### Task별 최적화 계획
 
-| Task | 최적화 항목 | 상태 |
-|------|-----------|------|
-| Task 004 | 로딩 UI (Skeleton) | ✅ 완료 |
-| Task 006 | Notion API 캐싱 | ⏳ 계획 |
+| Task     | 최적화 항목                   | 상태    |
+| -------- | ----------------------------- | ------- |
+| Task 004 | 로딩 UI (Skeleton)            | ✅ 완료 |
+| Task 006 | Notion API 캐싱               | ⏳ 계획 |
 | Task 007 | PDF 생성 최적화 (동적 import) | ⏳ 계획 |
-| Task 009 | 전체 성능 최적화 | ⏳ 계획 |
-| Task 010 | 접근성 개선 | ⏳ 계획 |
+| Task 009 | 전체 성능 최적화              | ⏳ 계획 |
+| Task 010 | 접근성 개선                   | ⏳ 계획 |
 
 ### 캐싱 전략 (Task 009)
 
@@ -442,8 +445,8 @@ Production URL
 export async function getInvoiceFromNotion(pageId: string): Promise<Invoice> {
   // fetch 캐시 설정
   const response = await fetch(url, {
-    next: { revalidate: 3600 } // 1시간마다 재검증
-  })
+    next: { revalidate: 3600 }, // 1시간마다 재검증
+  });
 }
 
 // 메타데이터 캐싱

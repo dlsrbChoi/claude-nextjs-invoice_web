@@ -5,6 +5,7 @@
 **invoice-web**은 Notion을 데이터베이스로 활용하여 견적서를 관리하고, 클라이언트가 웹에서 고유 링크로 견적서를 조회하고 PDF로 다운로드할 수 있는 시스템입니다.
 
 **핵심 가치:**
+
 - 별도 관리자 페이지 없이 Notion만으로 운영
 - API 중심의 확장 가능한 아키텍처
 - 모바일/태블릿/데스크톱 반응형 지원
@@ -14,13 +15,13 @@
 
 ## 📚 문서 구조
 
-| 문서 | 목적 | 대상 |
-|------|------|------|
+| 문서                | 목적                            | 대상               |
+| ------------------- | ------------------------------- | ------------------ |
 | **NOTION_SETUP.md** | Notion 데이터베이스 설정 가이드 | Notion 초기 설정자 |
-| **ARCHITECTURE.md** | 프로젝트 기술 아키텍처 | 개발자 |
-| **CLAUDE.md** | AI 개발자 작업 가이드| Claude Code |
-| **PRD.md** | 제품 요구사항 정의 | 기획/개발 |
-| **README.md** | 프로젝트 실행 및 배포 | 모든 사용자 |
+| **ARCHITECTURE.md** | 프로젝트 기술 아키텍처          | 개발자             |
+| **CLAUDE.md**       | AI 개발자 작업 가이드           | Claude Code        |
+| **PRD.md**          | 제품 요구사항 정의              | 기획/개발          |
+| **README.md**       | 프로젝트 실행 및 배포           | 모든 사용자        |
 
 ---
 
@@ -46,6 +47,7 @@ notes             | Text       | ⭕  | 비고/특수사항
 ```
 
 **Select 옵션 (status):**
+
 - `draft` - 작성 중 (회색)
 - `sent` - 발송됨 (파란색)
 - `viewed` - 확인됨 (녹색)
@@ -65,9 +67,11 @@ invoice_id        | Relation   | ✅  | Invoices 데이터베이스와 연결
 ```
 
 **amount 필드 수식:**
+
 ```
 prop("quantity") * prop("unit_price")
 ```
+
 이 필드는 자동으로 수량 × 단가를 계산합니다.
 
 ---
@@ -75,6 +79,7 @@ prop("quantity") * prop("unit_price")
 ## 🔑 Integration 설정 단계
 
 ### 1단계: Notion Integration 생성
+
 ```
 https://www.notion.so/my-integrations
 → "새 통합 만들기" 클릭
@@ -84,12 +89,14 @@ https://www.notion.so/my-integrations
 ```
 
 ### 2단계: 환경 변수 설정
+
 ```bash
 # .env.local 파일 생성
 NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 ### 3단계: 데이터베이스 권한 부여
+
 ```
 Invoices 데이터베이스 우측상단 공유
 → Integration (invoice-web) 추가
@@ -99,6 +106,7 @@ InvoiceItems 데이터베이스도 동일하게 권한 부여
 ```
 
 ### 4단계: 샘플 데이터 추가
+
 ```
 Invoices에 최소 1개 견적서 레코드 생성
 InvoiceItems에 2-3개 항목 레코드 생성
@@ -106,6 +114,7 @@ InvoiceItems에 2-3개 항목 레코드 생성
 ```
 
 ### 5단계: 테스트
+
 ```bash
 # 개발 서버 시작
 npm run dev
@@ -118,20 +127,20 @@ http://localhost:3000/invoice/[pageId]
 
 ## 🏗️ 프로젝트 기술 스택
 
-| 영역 | 기술 | 버전 |
-|------|------|------|
-| 프레임워크 | Next.js | 16.2.12 |
-| 런타임 | React | 19.2.4 |
-| 언어 | TypeScript | 5 |
-| 스타일링 | TailwindCSS | 4 |
-| UI | shadcn/ui (base-nova) | - |
-| 컴포넌트 베이스 | @base-ui/react | 1.6.0 |
-| 아이콘 | lucide-react | 1.28.0 |
-| 테마 | next-themes | 0.4.6 |
-| 포매팅 | class-variance-authority | 0.7.1 |
-| 클래스 병합 | tailwind-merge | 3.6.0 |
-| 토스트 | sonner | 2.0.7 |
-| 호스팅 | Vercel | - |
+| 영역            | 기술                     | 버전    |
+| --------------- | ------------------------ | ------- |
+| 프레임워크      | Next.js                  | 16.2.12 |
+| 런타임          | React                    | 19.2.4  |
+| 언어            | TypeScript               | 5       |
+| 스타일링        | TailwindCSS              | 4       |
+| UI              | shadcn/ui (base-nova)    | -       |
+| 컴포넌트 베이스 | @base-ui/react           | 1.6.0   |
+| 아이콘          | lucide-react             | 1.28.0  |
+| 테마            | next-themes              | 0.4.6   |
+| 포매팅          | class-variance-authority | 0.7.1   |
+| 클래스 병합     | tailwind-merge           | 3.6.0   |
+| 토스트          | sonner                   | 2.0.7   |
+| 호스팅          | Vercel                   | -       |
 
 ---
 
@@ -201,7 +210,7 @@ HTML 렌더링 (클라이언트 브라우저)
   - 환경 변수 설정 완료 ✅
   - Notion Integration 생성 필요 📋
   - 데이터베이스 속성 설정 필요 📋
-  
+
 - ⏳ Task 006: 견적서 데이터 조회 및 파싱 구현
   - Notion API 실제 연동
   - 데이터 변환 로직
@@ -310,6 +319,7 @@ HTML 렌더링 (클라이언트 브라우저)
 ### Q1: Notion 데이터베이스를 먼저 만들어야 하나요?
 
 **A:** 네, 다음 순서를 권장합니다:
+
 1. Notion Integration 생성 및 API 키 복사
 2. `.env.local` 파일에 API 키 설정
 3. Invoices, InvoiceItems 데이터베이스 생성
@@ -319,6 +329,7 @@ HTML 렌더링 (클라이언트 브라우저)
 ### Q2: Integration 권한은 무엇을 주어야 하나요?
 
 **A:** 최소한 다음 권한이 필요합니다:
+
 - ✅ `read` (읽기) - 견적서 데이터 조회
 - ✅ `update` (수정) - 향후 기능 확장
 - ✅ `insert` (작성) - 향후 기능 확장
@@ -346,6 +357,7 @@ Task 005에서 `NOTION_PROPERTY_NAMES` 상수를 추가할 예정입니다.
 ### Q4: 로컬에서 테스트할 때 더미 데이터를 사용하나요?
 
 **A:** 현재 (Task 004) 더미 데이터를 사용하고 있습니다:
+
 - `src/lib/mock-data.ts` - 샘플 견적서 3개
 - `getInvoiceFromNotion()` - 먼저 더미 데이터 확인
 - Task 006에서 실제 Notion API로 전환됩니다
@@ -353,6 +365,7 @@ Task 005에서 `NOTION_PROPERTY_NAMES` 상수를 추가할 예정입니다.
 ### Q5: PDF 다운로드는 언제 구현되나요?
 
 **A:** Task 007에서 구현됩니다:
+
 - `@react-pdf/renderer` 라이브러리 사용
 - 한글 폰트 임베딩 포함
 - API Route로 PDF 생성
@@ -365,6 +378,7 @@ Task 005에서 `NOTION_PROPERTY_NAMES` 상수를 추가할 예정입니다.
 ### Task 005: Notion 연동 기반 구축 준비 사항
 
 **필수 완료 항목:**
+
 1. [ ] [NOTION_SETUP.md](./NOTION_SETUP.md) 따라 데이터베이스 설정
 2. [ ] Notion Integration 생성 및 API 키 복사
 3. [ ] `.env.local` 파일에 API 키 입력
@@ -373,6 +387,7 @@ Task 005에서 `NOTION_PROPERTY_NAMES` 상수를 추가할 예정입니다.
 6. [ ] 샘플 데이터 최소 1개 입력
 
 **구현 계획:**
+
 - 환경 변수 검증 강화
 - `normalizeNotionPageId()` 3가지 형식 지원 (32자 hex, UUID, URL)
 - `InvoiceLookup` 폼과 라우팅 연결

@@ -9,6 +9,7 @@
 **invoice-web**은 Notion을 데이터베이스로 활용하여 견적서를 관리하고, 클라이언트가 웹에서 조회 및 PDF 다운로드할 수 있는 시스템입니다.
 
 ### 아키텍처 흐름
+
 ```
 Notion 데이터베이스 (견적서 데이터)
          ↓
@@ -20,6 +21,7 @@ Next.js 애플리케이션
 ```
 
 ### 핵심 기능
+
 - **F001**: Notion API를 통해 견적서 데이터 실시간 조회
 - **F002**: 고유 URL로 견적서 조회 페이지 표시
 - **F003**: 견적서를 PDF로 다운로드
@@ -53,6 +55,7 @@ Next.js 애플리케이션
 ### 1.2 .env.local에 토큰 등록
 
 `.env.local` 파일 생성 (`.env.example` 참고):
+
 ```env
 NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
@@ -64,34 +67,37 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ### 2.1 데이터베이스 구조 개요
 
 **2개 데이터베이스가 필요합니다:**
+
 1. **Invoices** (견적서 정보)
 2. **InvoiceItems** (견적 항목)
 
 ### 2.2 Invoices 데이터베이스 (견적서)
 
 #### 생성 방법
+
 1. Notion 워크스페이스 열기
 2. **"+ 추가"** → **"데이터베이스"** → **"테이블"** 선택
 3. 이름: `Invoices`
 
 #### 속성 정의
 
-| 속성명 | 타입 | 필수 | 설명 | 예시 |
-|--------|------|------|------|------|
-| **제목** | Title | ✅ | 견적서 제목 | "웹사이트 리디자인" |
-| **invoice_number** | Text | ✅ | 견적서 번호 | "INV-2026-001" |
-| **client_name** | Text | ✅ | 클라이언트 회사명 | "ABC 주식회사" |
-| **client_email** | Email | ⭕ | 클라이언트 이메일 | "contact@abc.com" |
-| **issue_date** | Date | ✅ | 발행일 | 2026-08-01 |
-| **valid_until** | Date | ✅ | 유효기간 | 2026-09-01 |
-| **status** | Select | ✅ | 견적서 상태 | draft, sent, viewed, paid |
-| **items** | Relation | ✅ | 관련 항목들 | InvoiceItems.invoice_id |
-| **total_amount** | Number | ✅ | 총 금액 | 2500000 |
-| **notes** | Text | ⭕ | 비고/특수사항 | "결제 조건: 50% 선금" |
+| 속성명             | 타입     | 필수 | 설명              | 예시                      |
+| ------------------ | -------- | ---- | ----------------- | ------------------------- |
+| **제목**           | Title    | ✅   | 견적서 제목       | "웹사이트 리디자인"       |
+| **invoice_number** | Text     | ✅   | 견적서 번호       | "INV-2026-001"            |
+| **client_name**    | Text     | ✅   | 클라이언트 회사명 | "ABC 주식회사"            |
+| **client_email**   | Email    | ⭕   | 클라이언트 이메일 | "contact@abc.com"         |
+| **issue_date**     | Date     | ✅   | 발행일            | 2026-08-01                |
+| **valid_until**    | Date     | ✅   | 유효기간          | 2026-09-01                |
+| **status**         | Select   | ✅   | 견적서 상태       | draft, sent, viewed, paid |
+| **items**          | Relation | ✅   | 관련 항목들       | InvoiceItems.invoice_id   |
+| **total_amount**   | Number   | ✅   | 총 금액           | 2500000                   |
+| **notes**          | Text     | ⭕   | 비고/특수사항     | "결제 조건: 50% 선금"     |
 
 #### 속성 설정 상세
 
 **1. 제목 속성 (Title)**
+
 ```
 속성명: 제목
 타입: Title (기본값, 변경 불가)
@@ -99,6 +105,7 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **2. invoice_number (Text)**
+
 ```
 속성명: invoice_number
 타입: Text
@@ -107,6 +114,7 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **3. client_name (Text)**
+
 ```
 속성명: client_name
 타입: Text
@@ -115,6 +123,7 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **4. client_email (Email)**
+
 ```
 속성명: client_email
 타입: Email
@@ -123,6 +132,7 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **5. issue_date (Date)**
+
 ```
 속성명: issue_date
 타입: Date
@@ -132,6 +142,7 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **6. valid_until (Date)**
+
 ```
 속성명: valid_until
 타입: Date
@@ -141,6 +152,7 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **7. status (Select)**
+
 ```
 속성명: status
 타입: Select
@@ -154,6 +166,7 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **8. items (Relation)**
+
 ```
 속성명: items
 타입: Relation
@@ -163,6 +176,7 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **9. total_amount (Number)**
+
 ```
 속성명: total_amount
 타입: Number
@@ -172,6 +186,7 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **10. notes (Text)**
+
 ```
 속성명: notes
 타입: Text (또는 Rich Text)
@@ -184,23 +199,25 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ### 2.3 InvoiceItems 데이터베이스 (항목)
 
 #### 생성 방법
+
 1. Notion 워크스페이스에서 **"+ 추가"** → **"데이터베이스"** → **"테이블"**
 2. 이름: `InvoiceItems`
 
 #### 속성 정의
 
-| 속성명 | 타입 | 필수 | 설명 | 예시 |
-|--------|------|------|------|------|
-| **제목** | Title | ✅ | 항목명 | "UI/UX 디자인" |
-| **description** | Text | ⭕ | 항목 설명 | "메인 페이지 10페이지" |
-| **quantity** | Number | ✅ | 수량 | 1 |
-| **unit_price** | Number | ✅ | 단가 | 500000 |
-| **amount** | Formula | ✅ | 금액 (자동 계산) | `prop("quantity") * prop("unit_price")` |
-| **invoice_id** | Relation | ✅ | 연결된 견적서 | Invoices.items |
+| 속성명          | 타입     | 필수 | 설명             | 예시                                    |
+| --------------- | -------- | ---- | ---------------- | --------------------------------------- |
+| **제목**        | Title    | ✅   | 항목명           | "UI/UX 디자인"                          |
+| **description** | Text     | ⭕   | 항목 설명        | "메인 페이지 10페이지"                  |
+| **quantity**    | Number   | ✅   | 수량             | 1                                       |
+| **unit_price**  | Number   | ✅   | 단가             | 500000                                  |
+| **amount**      | Formula  | ✅   | 금액 (자동 계산) | `prop("quantity") * prop("unit_price")` |
+| **invoice_id**  | Relation | ✅   | 연결된 견적서    | Invoices.items                          |
 
 #### 속성 설정 상세
 
 **1. 제목 속성 (Title)**
+
 ```
 속성명: 제목
 타입: Title
@@ -208,6 +225,7 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **2. description (Text)**
+
 ```
 속성명: description
 타입: Text (또는 Rich Text)
@@ -216,6 +234,7 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **3. quantity (Number)**
+
 ```
 속성명: quantity
 타입: Number
@@ -225,6 +244,7 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **4. unit_price (Number)**
+
 ```
 속성명: unit_price
 타입: Number
@@ -234,15 +254,18 @@ NOTION_API_KEY=ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 **5. amount (Formula)** ⭐ **중요**
+
 ```
 속성명: amount
 타입: Formula
 수식: prop("quantity") * prop("unit_price")
 필수: ✅ Yes (자동 계산)
 ```
+
 > 이 필드는 수량 × 단가를 자동 계산합니다.
 
 **6. invoice_id (Relation)**
+
 ```
 속성명: invoice_id
 타입: Relation
@@ -281,37 +304,40 @@ Integration이 생성한 후, 각 데이터베이스에 접근 권한을 부여�
 ### 4.1 Invoices 데이터베이스에 샘플 데이터 추가
 
 **첫 번째 견적서**
-| 필드 | 값 |
-|------|-----|
-| 제목 | 웹사이트 리디자인 프로젝트 |
-| invoice_number | INV-2026-001 |
-| client_name | 아름다운 카페 주식회사 |
-| client_email | contact@beautifulcafe.com |
-| issue_date | 2026-08-01 |
-| valid_until | 2026-08-31 |
-| status | sent |
-| total_amount | 2150000 |
-| notes | 결제 조건: 계약금 50%, 완료 시 50% 잔금 |
+
+| 필드           | 값                                      |
+| -------------- | --------------------------------------- |
+| 제목           | 웹사이트 리디자인 프로젝트              |
+| invoice_number | INV-2026-001                            |
+| client_name    | 아름다운 카페 주식회사                  |
+| client_email   | contact@beautifulcafe.com               |
+| issue_date     | 2026-08-01                              |
+| valid_until    | 2026-08-31                              |
+| status         | sent                                    |
+| total_amount   | 2150000                                 |
+| notes          | 결제 조건: 계약금 50%, 완료 시 50% 잔금 |
 
 ### 4.2 InvoiceItems 데이터베이스에 항목 추가
 
 **첫 번째 항목**
-| 필드 | 값 |
-|------|-----|
-| 제목 | UI/UX 디자인 |
+
+| 필드        | 값                                               |
+| ----------- | ------------------------------------------------ |
+| 제목        | UI/UX 디자인                                     |
 | description | 메인페이지 및 서브페이지 UI/UX 디자인 (10페이지) |
-| quantity | 1 |
-| unit_price | 500000 |
-| invoice_id | 웹사이트 리디자인 프로젝트 (위의 견적서 선택) |
+| quantity    | 1                                                |
+| unit_price  | 500000                                           |
+| invoice_id  | 웹사이트 리디자인 프로젝트 (위의 견적서 선택)    |
 
 **두 번째 항목**
-| 필드 | 값 |
-|------|-----|
-| 제목 | React 프론트엔드 개발 |
+
+| 필드        | 값                                        |
+| ----------- | ----------------------------------------- |
+| 제목        | React 프론트엔드 개발                     |
 | description | 리액트 기반 프론트엔드 개발 (80시간 기준) |
-| quantity | 2 |
-| unit_price | 300000 |
-| invoice_id | 웹사이트 리디자인 프로젝트 |
+| quantity    | 2                                         |
+| unit_price  | 300000                                    |
+| invoice_id  | 웹사이트 리디자인 프로젝트                |
 
 ---
 
@@ -347,6 +373,7 @@ Notion에서 견적서 페이지의 ID를 찾는 방법:
 ### 5.3 localhost에서 테스트
 
 브라우저 주소창에 입력:
+
 ```
 http://localhost:3000/invoice/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
@@ -361,14 +388,14 @@ http://localhost:3000/invoice/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ```typescript
 // Notion Property → Application Field
-const title = extractTextProperty(properties, 'title')              // 제목
-const clientName = extractTextProperty(properties, 'client_name')   // 클라이언트명
-const clientEmail = extractTextProperty(properties, 'client_email') // 이메일
-const issueDate = extractDateProperty(properties, 'issue_date')     // 발행일
-const validUntil = extractDateProperty(properties, 'valid_until')   // 유효기간
-const status = extractSelectProperty(properties, 'status')          // 상태
-const totalAmount = properties.total_amount?.number || 0            // 총액
-const notes = extractTextProperty(properties, 'notes')              // 비고
+const title = extractTextProperty(properties, 'title'); // 제목
+const clientName = extractTextProperty(properties, 'client_name'); // 클라이언트명
+const clientEmail = extractTextProperty(properties, 'client_email'); // 이메일
+const issueDate = extractDateProperty(properties, 'issue_date'); // 발행일
+const validUntil = extractDateProperty(properties, 'valid_until'); // 유효기간
+const status = extractSelectProperty(properties, 'status'); // 상태
+const totalAmount = properties.total_amount?.number || 0; // 총액
+const notes = extractTextProperty(properties, 'notes'); // 비고
 ```
 
 **중요**: Notion 속성명은 정확하게 일치해야 합니다!
@@ -380,6 +407,7 @@ const notes = extractTextProperty(properties, 'notes')              // 비고
 ### Q1: "NOTION_API_KEY 환경 변수가 설정되지 않았습니다" 오류
 
 **해결**:
+
 1. `.env.local` 파일이 프로젝트 루트에 존재하는지 확인
 2. `NOTION_API_KEY=ntn_...` 정확히 입력되어 있는지 확인
 3. 개발 서버를 **재시작** (`npm run dev`)
@@ -387,6 +415,7 @@ const notes = extractTextProperty(properties, 'notes')              // 비고
 ### Q2: "요청하신 견적서를 찾을 수 없습니다" 404 오류
 
 **해결**:
+
 1. 페이지 ID가 올바른지 확인
 2. Integration이 Invoices 데이터베이스에 접근 권한이 있는지 확인
 3. Notion에서 해당 레코드가 삭제되지 않았는지 확인
@@ -394,6 +423,7 @@ const notes = extractTextProperty(properties, 'notes')              // 비고
 ### Q3: 항목이 표시되지 않음
 
 **해결**:
+
 1. InvoiceItems 데이터베이스에 항목 레코드 추가했는지 확인
 2. `invoice_id` 필드에 올바른 견적서가 연결되어 있는지 확인
 3. Integration이 InvoiceItems 데이터베이스에 접근 권한이 있는지 확인
@@ -401,6 +431,7 @@ const notes = extractTextProperty(properties, 'notes')              // 비고
 ### Q4: 데이터가 변경되었는데 웹에 반영되지 않음
 
 **해결**:
+
 1. 페이지 새로고침 (Ctrl+R 또는 Cmd+R)
 2. 브라우저 캐시 삭제
 3. Task 009에서 캐싱 전략 최적화 예정

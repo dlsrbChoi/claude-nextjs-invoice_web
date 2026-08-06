@@ -15,27 +15,27 @@
 
 ### 기술 스택
 
-| 영역 | 기술 |
-| --- | --- |
-| 프레임워크 | Next.js (App Router), React 19, TypeScript 5 |
-| 스타일링 | TailwindCSS v4, shadcn/ui (base-nova), oklch 색상 시스템 |
-| 아이콘 | lucide-react |
-| 테마 | next-themes (라이트/다크/시스템) |
-| 외부 API | Notion API v1 (`@notionhq/client` 또는 fetch 기반 클라이언트) |
-| PDF 생성 | `@react-pdf/renderer` (서버 API Route) |
-| 배포 | Vercel (`NOTION_API_KEY`, `NOTION_DATABASE_ID`) |
-| 패키지 관리 | npm |
+| 영역        | 기술                                                          |
+| ----------- | ------------------------------------------------------------- |
+| 프레임워크  | Next.js (App Router), React 19, TypeScript 5                  |
+| 스타일링    | TailwindCSS v4, shadcn/ui (base-nova), oklch 색상 시스템      |
+| 아이콘      | lucide-react                                                  |
+| 테마        | next-themes (라이트/다크/시스템)                              |
+| 외부 API    | Notion API v1 (`@notionhq/client` 또는 fetch 기반 클라이언트) |
+| PDF 생성    | `@react-pdf/renderer` (서버 API Route)                        |
+| 배포        | Vercel (`NOTION_API_KEY`, `NOTION_DATABASE_ID`)               |
+| 패키지 관리 | npm                                                           |
 
 ### 기능 ID ↔ Task 매핑
 
-| 기능 ID | 기능명 | 담당 Task |
-| --- | --- | --- |
-| F001 | 노션 데이터베이스 연동 | Task 005, Task 006 |
-| F002 | 견적서 조회 | Task 001, Task 004, Task 006 |
-| F003 | PDF 다운로드 | Task 007 |
-| F010 | 견적서 URL 생성 | Task 001, Task 005 |
-| F011 | 견적서 유효성 검증 | Task 002, Task 008 |
-| F012 | 반응형 레이아웃 | Task 003, Task 004, Task 010 |
+| 기능 ID | 기능명                 | 담당 Task                    |
+| ------- | ---------------------- | ---------------------------- |
+| F001    | 노션 데이터베이스 연동 | Task 005, Task 006           |
+| F002    | 견적서 조회            | Task 001, Task 004, Task 006 |
+| F003    | PDF 다운로드           | Task 007                     |
+| F010    | 견적서 URL 생성        | Task 001, Task 005           |
+| F011    | 견적서 유효성 검증     | Task 002, Task 008           |
+| F012    | 반응형 레이아웃        | Task 003, Task 004, Task 010 |
 
 ---
 
@@ -91,7 +91,7 @@
   - ✅ 견적서 상태 유니온 타입 정의 (`'draft' | 'sent' | 'viewed' | 'paid'`)
   - ✅ TypeScript strict mode 활성화 및 타입 체크 통과 확인
   - ✅ 노션 데이터베이스 스키마 설계 문서화 (`docs/PRD.md` 데이터 모델 섹션, 구현 제외)
-  
+
   **추가 작업: 타입 정의 재설계 및 정규화** ✅
   - ✅ Notion 데이터베이스 실제 구조 분석 및 현재 타입 정의 재검토
   - ✅ `invoice-parser.ts` 유틸리티 함수 생성 (`parseAmount()`, `parseDateToISO()`, `normalizeStatus()` 등)
@@ -245,13 +245,13 @@
 
 ## MVP 성공 기준
 
-| # | 기준 | 관련 Task | 상태 |
-| --- | --- | --- | --- |
-| 1 | 노션 데이터베이스에서 견적서 정보를 정상적으로 가져옴 | Task 005, 006 | ⬜ |
-| 2 | 고유 URL로 접근 시 견적서가 웹에서 정확하게 표시됨 | Task 004, 006 | ⬜ |
-| 3 | PDF 다운로드 버튼 클릭 시 견적서가 PDF로 다운로드됨 | Task 007 | ⬜ |
-| 4 | 모바일/태블릿/데스크톱에서 정상 작동 | Task 004, 010 | ⬜ |
-| 5 | 잘못된 URL 접근 시 적절한 에러 메시지 표시 | Task 008 | ⬜ |
+| #   | 기준                                                  | 관련 Task     | 상태 |
+| --- | ----------------------------------------------------- | ------------- | ---- |
+| 1   | 노션 데이터베이스에서 견적서 정보를 정상적으로 가져옴 | Task 005, 006 | ⬜   |
+| 2   | 고유 URL로 접근 시 견적서가 웹에서 정확하게 표시됨    | Task 004, 006 | ⬜   |
+| 3   | PDF 다운로드 버튼 클릭 시 견적서가 PDF로 다운로드됨   | Task 007      | ⬜   |
+| 4   | 모바일/태블릿/데스크톱에서 정상 작동                  | Task 004, 010 | ⬜   |
+| 5   | 잘못된 URL 접근 시 적절한 에러 메시지 표시            | Task 008      | ⬜   |
 
 ### Phase별 완료 정의 (Definition of Done)
 
