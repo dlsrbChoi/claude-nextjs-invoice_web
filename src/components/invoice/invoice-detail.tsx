@@ -57,7 +57,9 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
         <Card className='p-6 print:border-0 print:bg-transparent print:p-0 print:shadow-none'>
           <div className='flex flex-col md:flex-row md:items-start md:justify-between gap-4'>
             <div className='flex-1'>
-              <h2 className='text-2xl md:text-3xl font-bold print:text-2xl'>{invoice.title}</h2>
+              <h2 id='invoice-header' className='text-2xl md:text-3xl font-bold print:text-2xl'>
+                {invoice.title}
+              </h2>
               <p className='text-sm text-muted-foreground mt-2'>
                 발급: {formatDate(invoice.issueDate)} | 송장 번호: {invoice.invoiceNumber}
               </p>
@@ -75,7 +77,10 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
 
         {/* 클라이언트 정보 */}
         <Card className='p-6 print:border-0 print:bg-transparent print:p-0 print:shadow-none'>
-          <h3 className='text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3'>
+          <h3
+            id='billing-info'
+            className='text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3'
+          >
             청구 대상
           </h3>
           <div className='space-y-1'>
@@ -91,19 +96,31 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
 
         {/* 항목 목록 - 데스크톱: 테이블, 모바일: 카드 */}
         <Card className='p-6 print:border-0 print:bg-transparent print:p-0 print:shadow-none'>
-          <h3 className='text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4'>
+          <h3
+            id='items-section'
+            className='text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4'
+          >
             항목
           </h3>
 
           {/* 테이블 뷰 (md 이상) */}
           <div className='hidden md:block print:block overflow-x-auto'>
             <table className='w-full text-sm'>
+              <caption className='sr-only'>견적서 항목 상세 정보</caption>
               <thead>
                 <tr className='border-b border-border'>
-                  <th className='text-left font-semibold py-4 px-2 md:px-4'>품명</th>
-                  <th className='text-right font-semibold py-4 px-2 md:px-4'>수량</th>
-                  <th className='text-right font-semibold py-4 px-2 md:px-4'>단가</th>
-                  <th className='text-right font-semibold py-4 px-2 md:px-4'>합계</th>
+                  <th scope='col' className='text-left font-semibold py-4 px-2 md:px-4'>
+                    품명
+                  </th>
+                  <th scope='col' className='text-right font-semibold py-4 px-2 md:px-4'>
+                    수량
+                  </th>
+                  <th scope='col' className='text-right font-semibold py-4 px-2 md:px-4'>
+                    단가
+                  </th>
+                  <th scope='col' className='text-right font-semibold py-4 px-2 md:px-4'>
+                    합계
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -159,7 +176,10 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
             {/* 비고 */}
             {invoice.notes && (
               <div className='pb-4 border-b border-border print:border-0 print:pb-0'>
-                <p className='text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2'>
+                <p
+                  id='notes-section'
+                  className='text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2'
+                >
                   비고
                 </p>
                 <p className='text-sm whitespace-pre-wrap text-foreground'>{invoice.notes}</p>

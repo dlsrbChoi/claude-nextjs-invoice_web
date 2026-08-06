@@ -3,6 +3,7 @@
  * Notion 데이터베이스에서 견적서 데이터를 가져오는 기능
  */
 
+import { cache } from 'react';
 import type { Invoice, InvoiceItem, NotionPageData } from './types';
 import { getMockInvoice } from './mock-data';
 import {
@@ -98,7 +99,7 @@ function getFetchCacheOptions() {
 }
 
 /**
- * Notion 페이지 ID에서 견적서 정보를 조회
+ * Notion 페이지 ID에서 견적서 정보를 조회 (내부 구현)
  * Notion API를 통해 실제 데이터를 로드하며, 항목들도 함께 조회
  *
  * @param pageId Notion 페이지 ID (32자 hex, UUID, 또는 URL 형식)
@@ -107,7 +108,7 @@ function getFetchCacheOptions() {
  * @throws {NotionPageNotFoundError} 페이지를 찾을 수 없음
  * @throws {NotionAPIError} 기타 Notion API 오류
  */
-export async function getInvoiceFromNotion(pageId: string): Promise<Invoice> {
+async function getInvoiceFromNotionImpl(pageId: string): Promise<Invoice> {
   try {
     // 페이지 ID 정규화 및 검증
     const normalizedPageId = normalizeNotionPageId(pageId);
@@ -143,6 +144,13 @@ export async function getInvoiceFromNotion(pageId: string): Promise<Invoice> {
     );
   }
 }
+
+/**
+ * React.cache()를 사용한 메모이제이션된 견적서 조회
+ * 같은 pageId에 대한 중복 요청을 렌더링 사이클 내에서 제거
+ * (60초 revalidate와 독립적으로 작동)
+ */
+export const getInvoiceFromNotion = cache(getInvoiceFromNotionImpl);
 
 /**
  * Notion 페이지 정보 조회 (캐싱 포함)
