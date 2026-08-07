@@ -15,6 +15,8 @@ import type {
   NotionNumberProperty,
   NotionEmailProperty,
   NotionRelationProperty,
+  Report,
+  ReportStatus,
 } from './types';
 import { INVOICE_STATUS_MAP } from './types';
 
@@ -310,5 +312,84 @@ export function parseInvoiceItemFromNotionPage(pageData: NotionPageData): Invoic
     quantity,
     unitPrice,
     amount,
+  };
+}
+
+/**
+ * 신고 상태 문자열을 ReportStatus로 정규화 (Task 614)
+ * Notion select 필드값 → ReportStatus 타입
+ *
+ * @param statusStr 상태값 문자열
+ * @returns 정규화된 ReportStatus
+ */
+export function normalizeReportStatus(statusStr: string): ReportStatus {
+  if (!statusStr) return 'pending';
+
+  const normalized = statusStr.toLowerCase().trim();
+
+  // ReportStatus 값 목록에서 매칭
+  if (['pending', 'reviewing', 'resolved', 'dismissed'].includes(normalized)) {
+    return normalized as ReportStatus;
+  }
+
+  return 'pending';
+}
+
+/**
+ * Notion 페이지 데이터를 Report 객체로 변환 (Task 614)
+ *
+ * @param pageData Notion 신고 데이터베이스의 페이지 데이터
+ * @returns 파싱된 Report 객체
+ */
+export function parseReportFromNotionPage(pageData: NotionPageData): Report {
+  const props = pageData.properties;
+
+  // 필수 필드 추출
+  const targetInvoiceTitle =
+    extractTextFromProperty(props['target_invoice_title']) ??
+    extractTextFromProperty(props['대상_견적서']) ??
+    'Unknown Invoice';
+
+  const targetNotionPageId =
+    extractTextFromProperty(props['target_notion_page_id']) ??
+    extractTextFromProperty(props['대상_페이지_ID']) ??
+    '';
+
+  const reason =
+    extractTextFromProperty(props['reason']) ?? extractTextFromProperty(props['사유']) ?? '';
+
+  const reporterName =
+    extractTextFromProperty(props['reporter_name']) ??
+    extractTextFromProperty(props['신고자']) ??
+    'Anonymous';
+
+  const reporterEmail =
+    extractEmailFromProperty(props['reporter_email']) ??
+    extractTextFromProperty(props['신고자_이메일']) ??
+    undefined;
+
+  // 상태 파싱
+  const statusStr =
+    extractSelectFromProperty(props['status']) ??
+    extractSelectFromProperty(props['상태']) ??
+    'pending';
+  const status = normalizeReportStatus(statusStr);
+
+  // 처리 이력 메모
+  const resolutionNote =
+    extractTextFromProperty(props['resolution_note']) ??
+    extractTextFromProperty(props['처리_메모']) ??
+    undefined;
+
+  return {
+    id: pageData.id,
+    targetNotionPageId,
+    targetInvoiceTitle,
+    reason,
+    reporterName,
+    reporterEmail,
+    status,
+    resolutionNote,
+    submittedAt: pageData.created_time,
   };
 }

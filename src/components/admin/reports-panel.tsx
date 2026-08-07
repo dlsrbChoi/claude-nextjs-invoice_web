@@ -1,15 +1,16 @@
 'use client';
 
 /**
- * 신고 관리 패널 (F035, Task 611)
+ * 신고 관리 패널 (F035, Task 614)
  * 상태별 필터 탭 + 신고 목록 테이블 + 상세 보기 Dialog + 처리 액션 UI
- * 더미 데이터(mockReports) 기반이며, 실제 서버 반영은 없음 (Task 614에서 실데이터 연동 예정)
+ * 서버에서 전달받은 실제 데이터 및 페이지네이션 지원
  */
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Flag, Eye, ExternalLink } from 'lucide-react';
+import { Flag, Eye, ExternalLink, ChevronRight, ChevronLeft } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/patterns/empty-state';
 import { formatDate } from '@/lib/format';
-import { mockReports } from '@/lib/mock-data';
 import type { Report, ReportStatus } from '@/lib/types';
 
 /** 필터 탭 값 ('all'은 전체 보기를 의미하며 ReportStatus에는 포함되지 않음) */
@@ -51,9 +51,20 @@ const STATUS_BADGE: Record<
   dismissed: { variant: 'destructive', label: '기각됨' },
 };
 
-export function ReportsPanel() {
-  const [reports, setReports] = useState<Report[]>(mockReports);
+interface ReportsPanelProps {
+  initialReports: Report[];
+  pagination: {
+    hasMore: boolean;
+    nextCursor?: string;
+    currentCursor?: string;
+  };
+}
+
+export function ReportsPanel({ initialReports, pagination }: ReportsPanelProps) {
+  const [reports, setReports] = useState<Report[]>(initialReports);
   const [filter, setFilter] = useState<ReportFilter>('pending');
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const filteredReports = reports.filter((report) =>
     filter === 'all' ? true : report.status === filter
@@ -63,38 +74,104 @@ export function ReportsPanel() {
   const countByFilter = (value: ReportFilter) =>
     value === 'all' ? reports.length : reports.filter((report) => report.status === value).length;
 
-  /** 신고 상태 변경 (더미 상태 변경 — 실제 서버 반영 없음) */
-  const handleStatusChange = (reportId: string, nextStatus: ReportStatus) => {
-    setReports((prev) =>
-      prev.map((report) => (report.id === reportId ? { ...report, status: nextStatus } : report))
-    );
-    toast.success(`신고 상태가 "${STATUS_BADGE[nextStatus].label}"(으)로 변경되었습니다.`);
+  /** 신고 상태 변경 (서버에 요청 후 상태 업데이트) */
+  const handleStatusChange = async (reportId: string, nextStatus: ReportStatus) => {
+    try {
+      const response = await fetch(`/api/admin/reports/${reportId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '상태 변경에 실패했습니다');
+      }
+
+      // 로컬 상태 업데이트
+      setReports((prev) =>
+        prev.map((report) => (report.id === reportId ? { ...report, status: nextStatus } : report))
+      );
+      toast.success(`신고 상태가 "${STATUS_BADGE[nextStatus].label}"(으)로 변경되었습니다.`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '상태 변경에 실패했습니다';
+      toast.error(errorMessage);
+    }
+  };
+
+  /** 다음 페이지로 이동 */
+  const handleNextPage = () => {
+    if (!pagination.hasMore || !pagination.nextCursor) return;
+    startTransition(() => {
+      router.push(`?cursor=${pagination.nextCursor}`);
+    });
+  };
+
+  /** 이전 페이지로 이동 (현재 커서 초기화) */
+  const handlePrevPage = () => {
+    startTransition(() => {
+      router.push('?cursor=');
+    });
   };
 
   return (
-    <Tabs value={filter} onValueChange={(value) => setFilter(value as ReportFilter)}>
-      <TabsList className='h-auto flex-wrap'>
-        {REPORT_FILTERS.map((item) => (
-          <TabsTrigger key={item.value} value={item.value}>
-            {item.label} ({countByFilter(item.value)})
-          </TabsTrigger>
-        ))}
-      </TabsList>
+    <div className='space-y-4'>
+      <Tabs value={filter} onValueChange={(value) => setFilter(value as ReportFilter)}>
+        <TabsList className='h-auto flex-wrap'>
+          {REPORT_FILTERS.map((item) => (
+            <TabsTrigger key={item.value} value={item.value}>
+              {item.label} ({countByFilter(item.value)})
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-      {REPORT_FILTERS.map((item) => (
-        <TabsContent key={item.value} value={item.value} className='mt-4'>
-          {filteredReports.length === 0 ? (
-            <EmptyState
-              icon={Flag}
-              title='해당 상태의 신고가 없습니다'
-              description='다른 필터를 선택하거나 이후 접수되는 신고를 확인해주세요.'
-            />
-          ) : (
-            <ReportTable reports={filteredReports} onStatusChange={handleStatusChange} />
-          )}
-        </TabsContent>
-      ))}
-    </Tabs>
+        {REPORT_FILTERS.map((item) => (
+          <TabsContent key={item.value} value={item.value} className='mt-4'>
+            {filteredReports.length === 0 ? (
+              <EmptyState
+                icon={Flag}
+                title='해당 상태의 신고가 없습니다'
+                description='다른 필터를 선택하거나 이후 접수되는 신고를 확인해주세요.'
+              />
+            ) : (
+              <ReportTable reports={filteredReports} onStatusChange={handleStatusChange} />
+            )}
+          </TabsContent>
+        ))}
+      </Tabs>
+
+      {/* 페이지네이션 컨트롤 */}
+      {reports.length > 0 && (
+        <div className='flex items-center justify-between border-t border-muted-foreground/25 pt-4'>
+          <div className='text-xs text-muted-foreground'>
+            총 {reports.length}개 신고 표시됨
+            {pagination.currentCursor && ' (다음 페이지 존재)'}
+          </div>
+          <div className='flex gap-2'>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={handlePrevPage}
+              disabled={!pagination.currentCursor || isPending}
+              className='gap-2'
+            >
+              <ChevronLeft className='h-4 w-4' />
+              이전
+            </Button>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={handleNextPage}
+              disabled={!pagination.hasMore || isPending}
+              className='gap-2'
+            >
+              다음
+              <ChevronRight className='h-4 w-4' />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

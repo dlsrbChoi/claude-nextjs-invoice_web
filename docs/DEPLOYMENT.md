@@ -27,11 +27,45 @@
 #### Step 2: 환경 변수 등록
 
 1. **프로젝트 설정 → "Environment Variables"**
-2. **다음 변수 추가**:
+2. **다음 변수를 추가** (v3.0 신규 변수 포함):
+
+   ##### 필수 변수 (v1.0부터)
 
    ```
    Name: NOTION_API_KEY
    Value: [실제 Notion API 키 입력]
+   Environment: Production, Preview, Development (모두 선택)
+   ```
+
+   ##### 필수 변수 (v3.0부터 추가)
+
+   ```
+   Name: ADMIN_PASSWORD
+   Value: [관리자 로그인 비밀번호]
+   Environment: Production, Preview, Development (모두 선택)
+
+   Name: ADMIN_SESSION_SECRET
+   Value: [32바이트 이상의 랜덤 문자열 (HMAC 서명 비밀키)]
+   Environment: Production, Preview, Development (모두 선택)
+
+   Name: NOTION_DATABASE_ID
+   Value: [견적서 Notion 데이터베이스 ID]
+   Environment: Production, Preview, Development (모두 선택)
+
+   Name: NOTION_REPORTS_DATABASE_ID
+   Value: [신고 Notion 데이터베이스 ID]
+   Environment: Production, Preview, Development (모두 선택)
+   ```
+
+   ##### 선택 변수 (이메일 발송 기능)
+
+   ```
+   Name: EMAIL_API_KEY
+   Value: [Resend API 키 (re_...)]
+   Environment: Production, Preview, Development (모두 선택)
+
+   Name: EMAIL_FROM_ADDRESS
+   Value: [발신자 이메일 주소 (예: noreply@example.com)]
    Environment: Production, Preview, Development (모두 선택)
    ```
 

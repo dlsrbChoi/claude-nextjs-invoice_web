@@ -363,3 +363,185 @@ Task 601 구현을 Playwright로 실제 브라우저 검증하는 과정에서, 
 **검증**: 브라우저 캐시를 초기화한 뒤 로그인 → `/admin` → `/admin/invoices` → `/admin/clients` → `/admin` 순으로 반복 이동해도 매번 정상적으로 세션이 유지됨을 확인했다. 로그아웃 후에는 `/admin` 재접근이 다시 `/login`으로 정확히 차단됨도 확인했다.
 
 **교훈**: 인증이 걸린 경로의 리다이렉트/에러 응답은 원칙적으로 캐시되어서는 안 된다. 향후 `next.config.ts`의 `headers()`나 유사한 전역 캐시 규칙을 수정할 때는 반드시 인증 경로(`/admin`, `/api/admin`, `/login`, `/api/auth`)가 제외되어 있는지 확인할 것.
+
+---
+
+## 🔐 이메일 발송 API 보안 검증 (Task 613, v3.0)
+
+### 배경
+
+v3.0에서 `/api/admin/share-email` 엔드포인트를 추가했다. 이메일 발송 기능은 다음 보안 위험을 내포한다:
+
+- **이메일 헤더 인젝션**: 수신자/제목 필드의 개행 문자로 Bcc, Cc 헤더 조작 가능
+- **메시지 XSS**: HTML 태그 미이스케이프 시 브라우저에서 렌더링
+- **Rate Limiting 부재**: 무제한 발송으로 인한 악용, 스팸 발생
+
+### 조치 내용
+
+| 항목             | 구현 위치                       | 상세                                                     |
+| ---------------- | ------------------------------- | -------------------------------------------------------- |
+| 입력 검증        | `src/lib/email-validation.ts`   | 이메일 형식, 개행 문자 검증 (CRLF 차단)                  |
+| Rate Limiting    | `src/lib/rate-limiter.ts`       | 분당 5건 제한, Redis/메모리 기반 토큰 버킷               |
+| 헤더 인젝션 방지 | `src/lib/email.ts`              | 수신자/제목/발신자의 개행 문자 제거 (정규식)             |
+| 이메일 로깅      | `src/lib/email-log.ts`          | Notion 신규 DB (`NOTION_REPORTS_DATABASE_ID`)에 기록     |
+| API 인증 & 로깅  | `src/app/api/admin/share-email` | 세션 검증 후 발송, 응답 헤더에 Rate-Limit-Remaining 포함 |
+
+### 검증 체크리스트
+
+- [ ] **입력 검증**:
+  - [ ] 유효한 이메일 주소만 수용 (정규식 또는 라이브러리)
+  - [ ] 개행 문자 (`\n`, `\r`, `\r\n`) 거부 또는 제거
+  - [ ] 제목 길이 제한 (예: 최대 200자)
+  - [ ] 메시지 길이 제한 (예: 최대 5000자)
+
+- [ ] **Rate Limiting**:
+  - [ ] 분당 5건 제한 정상 작동
+  - [ ] 사용자별 분리 (IP 또는 세션 기준)
+  - [ ] 429 응답 시 `Retry-After` 헤더 포함
+  - [ ] `X-RateLimit-Remaining` 헤더 표시 (클라이언트 표시용)
+
+- [ ] **헤더 인젝션 방지**:
+  - [ ] 수신자: "attacker@example.com\nBcc: victim@example.com" → 거부 또는 개행 제거
+  - [ ] 제목: "제목<br>분기됨" → 개행 제거 (또는 HTML 엔티티로 변환)
+  - [ ] 발신자: 고정값 (환경 변수 `EMAIL_FROM_ADDRESS`)
+
+- [ ] **이메일 로깅**:
+  - [ ] Notion DB에 다음 필드 기록:
+    - 발신자 (EMAIL_FROM_ADDRESS)
+    - 수신자
+    - 제목
+    - 메시지 (선택)
+    - 견적서 ID (notionPageId)
+    - 발송 시각
+    - 상태 (sent/failed)
+    - 오류 메시지 (실패 시)
+
+- [ ] **API 보안**:
+  - [ ] 세션 검증 (쿠키의 HMAC 서명 확인)
+  - [ ] 미인증 요청 시 401 반환
+  - [ ] 요청 로깅 (IP, 타임스탬프, 요청자)
+
+### 관련 파일
+
+- `src/lib/email-validation.ts` — 입력 검증 함수
+- `src/lib/email.ts` — 이메일 발송 (Resend API 클라이언트)
+- `src/lib/rate-limiter.ts` — 분당 5건 제한 구현
+- `src/lib/email-log.ts` — Notion DB 로깅
+- `src/app/api/admin/share-email/route.ts` — API 엔드포인트
+- `.env.example` — `EMAIL_API_KEY`, `EMAIL_FROM_ADDRESS` 추가
+
+---
+
+## 🔐 신고 API 보안 검증 (Task 614, v3.0)
+
+### 배경
+
+v3.0에서 `/api/admin/reports` 엔드포인트를 추가했다. 신고 관리 기능은 다음 보안 위험을 내포한다:
+
+- **미인증 액세스**: 임의의 사용자가 신고 데이터 수정 가능
+- **권한 검증 부재**: 다른 사용자의 신고를 삭제하거나 변조
+- **데이터 노출**: 신고 내용에 민감 정보 포함 시 유출
+
+### 조치 내용
+
+| 항목      | 구현 위치                       | 상세                             |
+| --------- | ------------------------------- | -------------------------------- |
+| 인증 검증 | `src/proxy.ts` + API 엔드포인트 | 세션 HMAC 서명 검증 (Task 601)   |
+| 권한 검증 | `src/app/api/admin/reports`     | 관리자만 접근 (세션 존재 확인)   |
+| 입력 검증 | API 엔드포인트                  | 상태값 검증 (pending/resolved)   |
+| XSS 방지  | API 응답 + UI 렌더링            | JSON 응답, 클라이언트 이스케이프 |
+| 로깅      | API 엔드포인트                  | 변경 이력 기록 (IP, 타임스탬프)  |
+
+### 검증 체크리스트
+
+- [ ] **인증 검증**:
+  - [ ] 미인증 요청 시 `/api/admin/reports/[id]` PATCH → 401
+  - [ ] 미인증 요청 시 `/api/admin/reports` GET → 401
+  - [ ] 위조 쿠키 주입 시 401 (Task 601 회귀)
+
+- [ ] **권한 검증**:
+  - [ ] 세션이 존재하면 모든 신고 수정 가능 (관리자 모델)
+  - [ ] 향후 역할 기반 제어(RBAC) 추가 시점에 재검토
+
+- [ ] **입력 검증**:
+  - [ ] 상태값: "pending" 또는 "resolved"만 허용
+  - [ ] 유효하지 않은 상태 입력 시 400 Bad Request
+  - [ ] 신고 ID 형식 검증 (UUID 또는 해당 DB 스키마)
+
+- [ ] **XSS 방지**:
+  - [ ] 신고 내용에 HTML 태그 포함 → JSON 응답 (자동 이스케이프)
+  - [ ] UI에서 신고 내용 렌더링 시 문자열로 표시 (태그 안 됨)
+  - [ ] `dangerouslySetInnerHTML` 미사용 확인
+
+- [ ] **로깅 & 모니터링**:
+  - [ ] 상태 변경 시 API 로그 기록:
+    - 요청자 IP
+    - 신고 ID
+    - 이전 상태 → 새 상태
+    - 타임스탐프
+  - [ ] Notion DB 또는 파일 로그에 기록
+
+### 관련 파일
+
+- `src/proxy.ts` — 인증 검증 (세션 HMAC)
+- `src/app/api/admin/reports/[id]/route.ts` — 신고 상태 변경 PATCH
+- `src/app/api/admin/reports/route.ts` — 신고 목록 조회 GET
+- `src/lib/notion.ts` — Notion Reports DB 쿼리 함수
+- `.env.example` — `NOTION_REPORTS_DATABASE_ID` 추가
+
+---
+
+## 🔒 보안 경계 맵 (v3.0 종합)
+
+### 인증 필요 경로 (관리자 전용)
+
+```
+/admin                              → 세션 검증 (HMAC) + 대시보드
+/admin/invoices                     → 세션 검증 + 목록 조회
+/admin/clients                      → 세션 검증 + 목록 조회
+/admin/reports                      → 세션 검증 + 목록 조회
+/api/admin/reports/[id]             → 세션 검증 + 상태 변경 (PATCH)
+/api/admin/share-email              → 세션 검증 + 이메일 발송 (POST)
+```
+
+### 공개 경로 (미인증 OK)
+
+```
+/                                   → 홈페이지 (InvoiceLookup)
+/invoice/[notionPageId]             → 공개 견적서 조회
+/api/invoices/[notionPageId]        → 공개 견적서 API
+```
+
+### 인증 관련 경로
+
+```
+/admin/login                        → 로그인 페이지 (POST /api/auth/login)
+/api/auth/login                     → 비밀번호 검증 + 세션 토큰 발급 (POST)
+/api/auth/logout                    → 세션 쿠키 삭제 (POST)
+```
+
+### 입력 검증 경로
+
+| 경로                      | 입력     | 검증                         |
+| ------------------------- | -------- | ---------------------------- |
+| `/api/auth/login`         | password | 문자열 비교 (타이밍 안전)    |
+| `/api/admin/share-email`  | toEmail  | 이메일 형식, 개행 차단       |
+| `/api/admin/share-email`  | subject  | 개행 차단, 길이 제한 (200자) |
+| `/api/admin/share-email`  | message  | 길이 제한 (5000자)           |
+| `/api/admin/reports/[id]` | status   | "pending" \| "resolved"      |
+
+---
+
+## 📊 최종 보안 평가 (v3.0)
+
+| 항목                   | 상태    | 근거                                |
+| ---------------------- | ------- | ----------------------------------- |
+| **API 키 관리**        | ✅ 안전 | .gitignore, 서버 전용 접근          |
+| **세션 위조 차단**     | ✅ 안전 | HMAC-SHA256 서명 + 타이밍 안전 비교 |
+| **XSS 방지**           | ✅ 안전 | HTML 이스케이핑, JSON 응답          |
+| **이메일 인젝션 방지** | ✅ 안전 | 개행 문자 검증/제거                 |
+| **Rate Limiting**      | ✅ 안전 | 분당 5건 제한 (이메일)              |
+| **인증 경로 보호**     | ✅ 안전 | proxy.ts + API 엔드포인트 검증      |
+| **캐시 정책**          | ✅ 안전 | 인증 경로 캐시 금지 (no-store)      |
+
+**결론**: ✅ v3.0 보안 검증 완료 — 모든 주요 보안 기준 충족

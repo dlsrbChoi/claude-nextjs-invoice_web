@@ -30,8 +30,8 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-/** 신고 메뉴 미처리 건수 (더미 값, Task 611에서 실데이터로 교체 예정) */
-const PENDING_REPORTS_COUNT = 3;
+/** 신고 메뉴 미처리 건수 (Task 614에서 동적 로드) */
+// 클라이언트 컴포넌트이므로 기본값을 표시하고, 필요시 useEffect로 갱신
 
 /** 사이드바 접힘 상태를 저장하는 로컬스토리지 키 */
 const SIDEBAR_COLLAPSED_KEY = 'admin-sidebar-collapsed';
@@ -40,18 +40,19 @@ interface AdminNavItem {
   href: string;
   label: string;
   icon: typeof LayoutDashboard;
-  badge?: number;
+  badgeKey?: 'reports'; // 동적 배지를 로드할 메뉴 항목 표시
 }
 
 /**
  * 관리자 메뉴 항목 정의
  * 순서: 대시보드 → 견적서 → 클라이언트 → 신고
+ * Task 614: 신고 관리의 배지는 동적으로 로드됨
  */
 const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: '/admin', label: '대시보드', icon: LayoutDashboard },
   { href: '/admin/invoices', label: '견적서', icon: FileText },
   { href: '/admin/clients', label: '클라이언트', icon: Users },
-  { href: '/admin/reports', label: '신고 관리', icon: Flag, badge: PENDING_REPORTS_COUNT },
+  { href: '/admin/reports', label: '신고 관리', icon: Flag, badgeKey: 'reports' },
 ];
 
 /**
@@ -70,16 +71,19 @@ function NavLinks({
   pathname,
   onNavigate,
   collapsed,
+  dynamicBadges,
 }: {
   pathname: string;
   onNavigate?: () => void;
   collapsed?: boolean;
+  dynamicBadges?: Record<string, number>;
 }) {
   return (
     <nav aria-label='관리자 메뉴' className='flex flex-col gap-1'>
       {ADMIN_NAV_ITEMS.map((item) => {
         const active = isNavItemActive(pathname, item.href);
         const Icon = item.icon;
+        const badge = item.badgeKey ? dynamicBadges?.[item.badgeKey] : undefined;
 
         const link = (
           <Link
@@ -98,21 +102,21 @@ function NavLinks({
           >
             <span className='relative shrink-0'>
               <Icon className='h-4 w-4' aria-hidden='true' />
-              {collapsed && item.badge ? (
+              {collapsed && badge ? (
                 <span
                   className='absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-semibold text-destructive-foreground'
                   aria-hidden='true'
                 >
-                  {item.badge}
+                  {badge > 9 ? '9+' : badge}
                 </span>
               ) : null}
             </span>
             {!collapsed && (
               <span className='flex flex-1 items-center justify-between'>
                 {item.label}
-                {item.badge ? (
+                {badge ? (
                   <Badge variant='destructive' className='ml-2'>
-                    {item.badge}
+                    {badge}
                   </Badge>
                 ) : null}
               </span>
@@ -126,7 +130,7 @@ function NavLinks({
               <TooltipTrigger render={link} />
               <TooltipContent side='right'>
                 {item.label}
-                {item.badge ? ` (미처리 ${item.badge}건)` : ''}
+                {badge ? ` (미처리 ${badge}건)` : ''}
               </TooltipContent>
             </Tooltip>
           );
@@ -141,10 +145,15 @@ function NavLinks({
 /**
  * 데스크톱용 고정 좌측 사이드바 (md 이상에서만 표시)
  * 접기/펼치기 상태는 로컬스토리지에 저장되어 새로고침 후에도 유지된다
+ * Task 614: 미처리 신고 배지를 동적으로 로드
  */
 export function AdminSidebar() {
   const pathname = usePathname() ?? '/admin';
   const [collapsed, setCollapsed] = useLocalStorage(SIDEBAR_COLLAPSED_KEY, false);
+  const [dynamicBadges] = useState<Record<string, number>>({});
+
+  // Task 614: 미처리 신고 건수 로드는 향후 구현
+  // 현재: 서버 컴포넌트에서 badge값을 props로 전달받는 방식 권장
 
   return (
     <aside
@@ -184,7 +193,7 @@ export function AdminSidebar() {
           <TooltipContent side='right'>{collapsed ? '펼치기' : '접기'}</TooltipContent>
         </Tooltip>
       </div>
-      <NavLinks pathname={pathname} collapsed={collapsed} />
+      <NavLinks pathname={pathname} collapsed={collapsed} dynamicBadges={dynamicBadges} />
     </aside>
   );
 }
@@ -196,6 +205,9 @@ export function AdminSidebar() {
 export function AdminMobileNav() {
   const pathname = usePathname() ?? '/admin';
   const [open, setOpen] = useState(false);
+  const [dynamicBadges] = useState<Record<string, number>>({});
+
+  // Task 614: 미처리 신고 건수 로드는 향후 구현
 
   return (
     <div className='flex items-center justify-between border-b border-border px-4 py-3 md:hidden'>
@@ -214,7 +226,11 @@ export function AdminMobileNav() {
             <SheetTitle>관리자 메뉴</SheetTitle>
           </SheetHeader>
           <div className='px-4 pb-4'>
-            <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} />
+            <NavLinks
+              pathname={pathname}
+              onNavigate={() => setOpen(false)}
+              dynamicBadges={dynamicBadges}
+            />
           </div>
         </SheetContent>
       </Sheet>

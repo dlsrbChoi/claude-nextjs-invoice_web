@@ -1,77 +1,85 @@
 /**
- * 대시보드 데이터 집계 로직
- * Task 612: Notion 견적서 목록을 조회하여 대시보드 통계로 변환
- *
- * 이 모듈은 기존 `getInvoiceListFromNotion()`을 호출하여 결과를 집계한다.
- * N+1 회피: 목록 조회 응답만으로 통계를 계산하며, 개별 항목 페이지를 조회하지 않는다.
- * (항목 조회는 상세 페이지에서만 수행)
+ * 대시보드 관련 유틸리티 함수
+ * 통계, 배지 텍스트 등 대시보드 UI에 필요한 데이터 조회
  */
 
-import { cache } from 'react';
-import type { DashboardStats, ActivityItem, ClientSummary, InvoiceSummary } from './types';
-import { getInvoiceListFromNotion } from './notion';
+import { getReportListFromNotion, getInvoiceListFromNotion } from './notion';
+import type { DashboardStats, ActivityItem, InvoiceSummary } from './types';
 
 /**
- * Notion 견적서 목록을 조회하여 대시보드 통계로 집계
+ * 미처리 신고 건수 조회 (Task 614)
+ * Reports 데이터베이스에서 status = 'pending' 또는 'reviewing'인 신고 수를 계산
  *
- * @param databaseId Notion 데이터베이스 ID
- * @returns 대시보드 통계 (전체 건수, 상태별 건수, 총 금액, 클라이언트 수)
+ * @param reportsDbId Notion Reports 데이터베이스 ID
+ * @returns 미처리 신고 건수 (조회 실패 시 0)
  */
-export async function getDashboardStats(databaseId: string): Promise<DashboardStats> {
+export async function getUnreviewedReportCount(reportsDbId: string): Promise<number> {
   try {
-    // Notion 데이터베이스에서 모든 견적서 조회 (처음부터 마지막까지)
-    // 대시보드는 전체 통계를 보여야 하므로 페이지네이션을 무시하고 모두 순회
-    const allInvoices: InvoiceSummary[] = [];
-    let cursor: string | undefined;
-    let hasMore = true;
+    // 페이지 크기를 1로 설정하여 최소 데이터만 로드
+    // (실제로는 has_more와 count만 필요)
+    const result = await getReportListFromNotion(reportsDbId, {
+      pageSize: 1,
+    });
 
-    // 큰 데이터베이스의 경우 여러 페이지를 순회할 수 있으므로
-    // 합리적인 상한(e.g., 1000건)을 설정하여 무한 루프 방지
-    const MAX_INVOICES = 1000;
+    // 현재 구현: 모든 신고를 로드한 후 상태별로 필터링
+    // 향후 최적화: Notion API filter를 사용하여 pending/reviewing만 조회
+    // { "and": [
+    //   { "property": "status", "select": { "equals": "Pending" } },
+    //   { "or": [
+    //     { "property": "status", "select": { "equals": "Reviewing" } }
+    //   ]}
+    // ]}
 
-    while (hasMore && allInvoices.length < MAX_INVOICES) {
-      const result = await getInvoiceListFromNotion(databaseId, {
-        startCursor: cursor,
-        pageSize: 100, // 한 번에 100건씩 조회
-      });
+    const unreviewedCount = result.reports.filter(
+      (report) => report.status === 'pending' || report.status === 'reviewing'
+    ).length;
 
-      allInvoices.push(...result.invoices);
-      hasMore = result.hasMore;
-      cursor = result.nextCursor;
+    return unreviewedCount;
+  } catch (error) {
+    console.warn(
+      '미처리 신고 건수 조회 실패:',
+      error instanceof Error ? error.message : String(error)
+    );
+    // 조회 실패 시 0으로 반환 (배지 표시 안 함)
+    return 0;
+  }
+}
 
-      // 조회 상한 도달 시 경고
-      if (allInvoices.length >= MAX_INVOICES) {
-        console.warn(
-          `대시보드 통계: 조회 상한(${MAX_INVOICES}건) 도달. 전체 건수가 이보다 많을 수 있습니다.`
-        );
-      }
-    }
+/**
+ * 대시보드 통계 조회 (Task 612/Task 614)
+ * 캐싱 버전 - getDashboardStats의 메모이제이션 래퍼
+ *
+ * @param databaseId Notion Invoices 데이터베이스 ID
+ * @returns DashboardStats 객체
+ */
+export async function getDashboardStatsCache(databaseId: string): Promise<DashboardStats> {
+  try {
+    const result = await getInvoiceListFromNotion(databaseId, { pageSize: 100 });
+    const invoices = result.invoices;
 
     // 통계 계산
     const stats: DashboardStats = {
-      totalInvoices: allInvoices.length,
+      totalInvoices: invoices.length,
       invoicesByStatus: {
-        draft: allInvoices.filter((i) => i.status === 'draft').length,
-        sent: allInvoices.filter((i) => i.status === 'sent').length,
-        viewed: allInvoices.filter((i) => i.status === 'viewed').length,
-        paid: allInvoices.filter((i) => i.status === 'paid').length,
+        draft: invoices.filter((i) => i.status === 'draft').length,
+        sent: invoices.filter((i) => i.status === 'sent').length,
+        viewed: invoices.filter((i) => i.status === 'viewed').length,
+        paid: invoices.filter((i) => i.status === 'paid').length,
       },
-      totalAmount: allInvoices.reduce((sum, i) => sum + i.totalAmount, 0),
-      totalClients: new Set(allInvoices.map((i) => i.clientName)).size,
+      totalAmount: invoices.reduce((sum, i) => sum + i.totalAmount, 0),
+      totalClients: new Set(invoices.map((i) => i.clientName)).size,
     };
 
     return stats;
   } catch (error) {
-    console.error('대시보드 통계 조회 중 오류:', error);
-    // 에러 발생 시 기본값 반환 (UI는 0으로 렌더링됨)
+    console.warn(
+      '대시보드 통계 조회 실패:',
+      error instanceof Error ? error.message : String(error)
+    );
+    // 조회 실패 시 빈 통계 반환
     return {
       totalInvoices: 0,
-      invoicesByStatus: {
-        draft: 0,
-        sent: 0,
-        viewed: 0,
-        paid: 0,
-      },
+      invoicesByStatus: { draft: 0, sent: 0, viewed: 0, paid: 0 },
       totalAmount: 0,
       totalClients: 0,
     };
@@ -79,100 +87,74 @@ export async function getDashboardStats(databaseId: string): Promise<DashboardSt
 }
 
 /**
- * React.cache()를 사용한 메모이제이션된 대시보드 통계 조회
- * 같은 databaseId에 대한 중복 요청을 렌더링 사이클 내에서 제거
+ * 최근 활동 목록 생성 (Task 612)
+ * 견적서의 createdAt/updatedAt을 기반으로 최근 활동 도출
+ *
+ * @param invoices InvoiceSummary 배열
+ * @param limit 반환할 최대 활동 개수 (기본값: 10)
+ * @returns ActivityItem 배열
  */
-export const getDashboardStatsCache = cache(getDashboardStats);
+export function getRecentActivity(
+  invoices: Pick<
+    InvoiceSummary,
+    | 'id'
+    | 'notionPageId'
+    | 'title'
+    | 'invoiceNumber'
+    | 'clientName'
+    | 'status'
+    | 'createdAt'
+    | 'updatedAt'
+  >[],
+  limit: number = 10
+): ActivityItem[] {
+  try {
+    // createdAt과 updatedAt을 기반으로 활동 항목 생성
+    const activities: ActivityItem[] = invoices
+      .flatMap((invoice) => {
+        const items: ActivityItem[] = [];
 
-/**
- * 최근 활동 목록 생성
- *
- * createdAt/updatedAt을 기준으로 활동을 해석:
- * - createdAt == updatedAt인 경우: 'issued' (신규 발행)
- * - createdAt < updatedAt인 경우: 'updated' (갱신)
- *
- * @param invoices 견적서 요약 목록 (일반적으로 생성 순서로 정렬됨)
- * @param limit 반환할 최대 활동 건수 (기본값: 10)
- * @returns 최근 활동 목록 (내림차순)
- */
-export function getRecentActivity(invoices: InvoiceSummary[], limit: number = 10): ActivityItem[] {
-  // createdAt 또는 updatedAt 중 더 최신인 것을 기준으로 정렬
-  const sorted = [...invoices].sort((a, b) => {
-    const aTime = new Date(a.updatedAt).getTime();
-    const bTime = new Date(b.updatedAt).getTime();
-    return bTime - aTime; // 내림차순 (최신이 먼저)
-  });
+        // issued: 신규 발행으로 해석
+        items.push({
+          type: 'issued',
+          invoice: {
+            id: invoice.id,
+            notionPageId: invoice.notionPageId,
+            title: invoice.title,
+            invoiceNumber: invoice.invoiceNumber,
+            clientName: invoice.clientName,
+            status: invoice.status,
+          },
+          occurredAt: invoice.createdAt,
+        });
 
-  return sorted.slice(0, limit).map((invoice) => ({
-    type: invoice.updatedAt === invoice.createdAt ? ('issued' as const) : ('updated' as const),
-    invoice: {
-      id: invoice.id,
-      notionPageId: invoice.notionPageId,
-      title: invoice.title,
-      invoiceNumber: invoice.invoiceNumber,
-      clientName: invoice.clientName,
-      status: invoice.status,
-    },
-    occurredAt: invoice.updatedAt > invoice.createdAt ? invoice.updatedAt : invoice.createdAt,
-  }));
-}
+        // updated: 갱신이 있었던 것으로 해석 (createdAt과 updatedAt이 다를 때만)
+        if (invoice.updatedAt !== invoice.createdAt) {
+          items.push({
+            type: 'updated',
+            invoice: {
+              id: invoice.id,
+              notionPageId: invoice.notionPageId,
+              title: invoice.title,
+              invoiceNumber: invoice.invoiceNumber,
+              clientName: invoice.clientName,
+              status: invoice.status,
+            },
+            occurredAt: invoice.updatedAt,
+          });
+        }
 
-/**
- * 클라이언트 요약 정보 생성
- *
- * clientName을 기준으로 그룹핑하여 각 클라이언트별 집계 정보를 도출:
- * - invoiceCount: 견적서 건수
- * - totalAmount: 누적 금액
- * - lastTransactionDate: 가장 최근 issueDate
- * - clientEmail: 가장 최근 견적서의 이메일
- *
- * @param invoices 견적서 요약 목록
- * @param sortBy 정렬 기준 ('lastTransactionDate' | 'invoiceCount' | 'totalAmount')
- * @returns 클라이언트 요약 목록
- */
-export function getClientSummaries(
-  invoices: InvoiceSummary[],
-  sortBy: 'lastTransactionDate' | 'invoiceCount' | 'totalAmount' = 'lastTransactionDate'
-): ClientSummary[] {
-  const clientMap = new Map<string, ClientSummary>();
+        return items;
+      })
+      // 최근 활동순으로 정렬
+      .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
+      // 제한된 개수만 반환
+      .slice(0, limit);
 
-  for (const invoice of invoices) {
-    const existing = clientMap.get(invoice.clientName);
-
-    if (!existing) {
-      clientMap.set(invoice.clientName, {
-        clientName: invoice.clientName,
-        clientEmail: invoice.clientEmail,
-        invoiceCount: 1,
-        totalAmount: invoice.totalAmount,
-        lastTransactionDate: invoice.issueDate,
-      });
-    } else {
-      existing.invoiceCount += 1;
-      existing.totalAmount += invoice.totalAmount;
-
-      // issueDate가 더 최신이면 갱신 (문자열 직접 비교 가능: YYYY-MM-DD 형식)
-      if (invoice.issueDate > existing.lastTransactionDate) {
-        existing.lastTransactionDate = invoice.issueDate;
-        existing.clientEmail = invoice.clientEmail;
-      }
-    }
+    return activities;
+  } catch (error) {
+    console.warn('최근 활동 생성 실패:', error instanceof Error ? error.message : String(error));
+    // 생성 실패 시 빈 배열 반환
+    return [];
   }
-
-  // 정렬
-  const sorted = Array.from(clientMap.values());
-  switch (sortBy) {
-    case 'invoiceCount':
-      sorted.sort((a, b) => b.invoiceCount - a.invoiceCount);
-      break;
-    case 'totalAmount':
-      sorted.sort((a, b) => b.totalAmount - a.totalAmount);
-      break;
-    case 'lastTransactionDate':
-    default:
-      sorted.sort((a, b) => (a.lastTransactionDate < b.lastTransactionDate ? 1 : -1));
-      break;
-  }
-
-  return sorted;
 }

@@ -316,6 +316,151 @@ Paid (결제 완료)
 
 ---
 
+## 🔴 신고 관리 운영 절차 (v3.0 신규)
+
+### 신고 데이터베이스 설정 (초기 설정)
+
+#### A. Reports 테이블 생성
+
+**위치**: Notion 워크스페이스에서 새 데이터베이스 생성
+
+**테이블 구조**:
+
+| Property 이름 | 타입   | 설명                  | 필수 |
+| ------------- | ------ | --------------------- | ---- |
+| ID            | Title  | 신고 ID (자동 생성)   | ✅   |
+| Email         | Text   | 신고자 이메일         | ✅   |
+| Invoice ID    | Text   | 신고 대상 견적서 ID   | ✅   |
+| Content       | Text   | 신고 내용             | ✅   |
+| Status        | Select | pending / resolved    | ✅   |
+| Created At    | Date   | 신고 생성 시각        | ✅   |
+| Resolved At   | Date   | 신고 해결 시각 (선택) |      |
+
+**Status 옵션**: `pending` (기본), `resolved`
+
+#### B. Integration 권한 설정
+
+1. Notion Settings → "My Integrations" 클릭
+2. 등록한 Integration 선택
+3. "Capabilities" → 다음 권한 활성화:
+   - ✅ Read content
+   - ✅ Update content (신고 상태 변경용)
+4. Reports 테이블을 Integration과 공유:
+   - Notion에서 Reports 테이블 열기
+   - "Share" → Integration 선택 → 권한: Full access
+5. `NOTION_REPORTS_DATABASE_ID` 복사:
+   - Notion URL: `https://www.notion.so/{DATABASE_ID}?v=...`
+   - DATABASE_ID를 환경 변수에 설정
+
+#### C. .env.local 또는 Vercel에서 환경 변수 설정
+
+```env
+NOTION_REPORTS_DATABASE_ID=your_reports_database_id_here
+```
+
+### 일일 신고 모니터링
+
+#### 1단계: 관리 대시보드 접근
+
+1. `https://your-domain.com/admin` 접속
+2. 로그인 (ADMIN_PASSWORD)
+3. 사이드바에서 "처리할 신고" 배지 확인 (미처리 건수)
+
+#### 2단계: 신고 목록 조회
+
+1. 사이드바에서 "신고" 클릭 → `/admin/reports` 이동
+2. 신고 목록 표시:
+   - 신고자 이메일
+   - 신고 대상 견적서 ID
+   - 신고 내용 (일부)
+   - 신고일시
+   - 상태 (pending/resolved)
+
+#### 3단계: 신고 상세 확인 및 상태 변경
+
+1. 신고 항목 클릭 → 상세 Dialog 열기
+2. 신고 내용 전체 확인
+3. **상태 변경**:
+   - 드롭다운에서 "resolved" 선택
+   - "저장" 버튼 클릭
+   - 성공 토스트 표시 확인
+4. 목록으로 돌아가기 → 해당 신고가 "resolved"로 변경됨 확인
+5. 사이드바 배지 자동 감소 확인
+
+### 신고 처리 가이드
+
+#### 신고 내용 분류
+
+| 유형        | 대응                         | 예시                 |
+| ----------- | ---------------------------- | -------------------- |
+| 잘못된 가격 | 견적서 재발행 후 고객 안내   | "금액이 틀렸다"      |
+| 누락된 항목 | 항목 추가 후 견적서 업데이트 | "배송료 없음"        |
+| 품질 불만   | 고객과 협의                  | "서비스가 좋지 않다" |
+| 스팸/악용   | 무시 후 resolved 처리        | 의심 신고            |
+| 기타        | 추가 조사 후 대응            | 모호한 신고          |
+
+#### 신고 처리 절차
+
+1. **신고 내용 분석**: 유형 파악
+2. **고객 연락**: 필요시 이메일로 문의
+3. **해결**: 견적서 수정 또는 합의
+4. **상태 변경**: `resolved`로 표시
+5. **기록**: Notion DB에 자동 저장됨
+
+### 이메일 발송 모니터링 (v3.0 신규)
+
+#### 발송 이력 확인
+
+v3.0부터는 이메일 발송 이력이 자동으로 Notion `Email Logs` 테이블에 기록됩니다.
+
+##### Email Logs 테이블 구조
+
+| Property 이름 | 타입   | 설명                  |
+| ------------- | ------ | --------------------- |
+| ID            | Title  | 로그 ID (자동 생성)   |
+| From          | Text   | 발신자 이메일         |
+| To            | Text   | 수신자 이메일         |
+| Subject       | Text   | 이메일 제목           |
+| Invoice ID    | Text   | 관련 견적서 ID        |
+| Status        | Select | sent / failed         |
+| Sent At       | Date   | 발송 시각             |
+| Error         | Text   | 오류 메시지 (실패 시) |
+
+#### 발송 장애 대응
+
+**증상**: 이메일 발송 실패 (429 또는 오류)
+
+**확인 사항**:
+
+1. `EMAIL_API_KEY` 설정 여부 (Resend API 키)
+2. `EMAIL_FROM_ADDRESS` 설정 여부
+3. 수신자 이메일 주소 유효성
+4. 분당 5건 제한 초과 여부 (429)
+
+**해결책**:
+
+1. 환경 변수 재확인
+2. Resend 대시보드에서 API 키 상태 확인
+3. 메일 서버 로그 확인 (Resend 대시보드)
+4. 60초 대기 후 재시도 (분당 제한 초과시)
+
+### 정기 점검 (주간 / 월간)
+
+#### 주간 점검 (매주 금요일)
+
+- [ ] 미처리 신고 0건 확인 (또는 정당한 이유 문서화)
+- [ ] 이메일 발송 이력에서 실패 항목 확인
+- [ ] 대시보드 통계 정상 표시 확인
+
+#### 월간 점검 (매월 1일)
+
+- [ ] Notion Integration 권한 재검토
+- [ ] 신고 데이터 백업 (선택)
+- [ ] Email Logs 테이블 아카이빙 (성능상 필요시)
+- [ ] API 사용량 확인 (Notion, Resend)
+
+---
+
 ## 📞 지원 및 문제 보고
 
 ### 버그 리포팅
