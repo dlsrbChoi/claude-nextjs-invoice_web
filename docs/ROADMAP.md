@@ -20,24 +20,24 @@ MVP(v1.0)는 "클라이언트가 고유 URL로 견적서를 조회하고 PDF로 
 
 ### 기술 스택 (MVP에서 변동 없음)
 
-| 영역        | 기술                                             |
-| ----------- | ------------------------------------------------ |
-| 프레임워크  | Next.js 16 (App Router), React 19, TypeScript 5  |
-| 스타일링    | TailwindCSS v4, shadcn/ui (base-nova), oklch     |
-| 테마        | next-themes (라이트/다크/시스템)                 |
-| 외부 API    | Notion API v1 (fetch 기반 클라이언트)            |
-| 배포        | Vercel                                           |
+| 영역       | 기술                                            |
+| ---------- | ----------------------------------------------- |
+| 프레임워크 | Next.js 16 (App Router), React 19, TypeScript 5 |
+| 스타일링   | TailwindCSS v4, shadcn/ui (base-nova), oklch    |
+| 테마       | next-themes (라이트/다크/시스템)                |
+| 외부 API   | Notion API v1 (fetch 기반 클라이언트)           |
+| 배포       | Vercel                                          |
 
 **신규 의존성 없음.** 링크 복사는 브라우저 표준 `navigator.clipboard`, 토스트는 이미 설치된 `sonner`를 사용합니다.
 
 ### 기능 ID ↔ Task 매핑
 
-| 기능 ID | 기능명               | 담당 Task                         |
-| ------- | -------------------- | --------------------------------- |
-| F020    | 관리자 견적서 목록   | Task 501, Task 504, Task 505      |
-| F021    | 링크 복사            | Task 502, Task 506                |
-| F022    | 표 가시성 개선       | Task 503                          |
-| F023    | 관리자 로그인        | Task 507 (ID/PW 환경 변수 기반)   |
+| 기능 ID | 기능명             | 담당 Task                       |
+| ------- | ------------------ | ------------------------------- |
+| F020    | 관리자 견적서 목록 | Task 501, Task 504, Task 505    |
+| F021    | 링크 복사          | Task 502, Task 506              |
+| F022    | 표 가시성 개선     | Task 503                        |
+| F023    | 관리자 로그인      | Task 507 (ID/PW 환경 변수 기반) |
 
 ---
 
@@ -45,24 +45,24 @@ MVP(v1.0)는 "클라이언트가 고유 URL로 견적서를 조회하고 PDF로 
 
 전체 내역은 `docs/roadmaps/ROADMAP_v1.md`를 참조하세요.
 
-| Phase   | 범위                              | 상태 | 산출물                                                              |
-| ------- | --------------------------------- | ---- | ------------------------------------------------------------------- |
-| Phase 1 | 애플리케이션 골격 구축            | ✅   | App Router 라우트, `src/lib/types.ts` 타입 체계                     |
-| Phase 2 | UI/UX 완성 (더미 데이터)          | ✅   | shadcn/ui 컴포넌트, `InvoiceDetail`, `InvoiceLookup`, `mock-data.ts` |
-| Phase 3 | 핵심 기능 구현                    | ✅   | `notion.ts` 페이지 조회, `notion-parser.ts`, PDF, 에러 처리          |
-| Phase 4 | 최적화 및 배포                    | ✅   | React.cache 메모이제이션, 접근성, Vercel 배포                        |
+| Phase   | 범위                     | 상태 | 산출물                                                               |
+| ------- | ------------------------ | ---- | -------------------------------------------------------------------- |
+| Phase 1 | 애플리케이션 골격 구축   | ✅   | App Router 라우트, `src/lib/types.ts` 타입 체계                      |
+| Phase 2 | UI/UX 완성 (더미 데이터) | ✅   | shadcn/ui 컴포넌트, `InvoiceDetail`, `InvoiceLookup`, `mock-data.ts` |
+| Phase 3 | 핵심 기능 구현           | ✅   | `notion.ts` 페이지 조회, `notion-parser.ts`, PDF, 에러 처리          |
+| Phase 4 | 최적화 및 배포           | ✅   | React.cache 메모이제이션, 접근성, Vercel 배포                        |
 
 ### 고도화가 이어받는 기존 자산
 
-| 자산                                                  | 이번 단계에서의 역할                                          |
-| ----------------------------------------------------- | ------------------------------------------------------------- |
-| `src/lib/types.ts` — `Invoice`, `InvoiceStatus`        | 목록 항목 타입의 기반. `InvoiceSummary`를 파생시켜 재사용      |
-| `src/lib/notion-parser.ts` — `parseInvoiceFromNotionPage()` | 목록 파싱에 그대로 재사용. **신규 파서 작성 금지**       |
-| `src/lib/notion.ts` — `normalizeNotionPageId()`, 에러 클래스 | 목록 경로의 ID 정규화 및 에러 분류에 재사용             |
-| `src/lib/format.ts` — 통화/날짜 포맷터                 | 목록 테이블 셀 렌더링에 재사용                                |
-| `src/components/ui/*` — Card, Badge, Button, Sonner    | 관리자 UI를 신규 컴포넌트 없이 조립                           |
-| `src/components/layout/*` — Header, Container          | 관리자 레이아웃이 감싸서 재사용                               |
-| `src/components/patterns/empty-state.tsx`              | 목록 0건 상태에 그대로 사용                                   |
+| 자산                                                         | 이번 단계에서의 역할                                      |
+| ------------------------------------------------------------ | --------------------------------------------------------- |
+| `src/lib/types.ts` — `Invoice`, `InvoiceStatus`              | 목록 항목 타입의 기반. `InvoiceSummary`를 파생시켜 재사용 |
+| `src/lib/notion-parser.ts` — `parseInvoiceFromNotionPage()`  | 목록 파싱에 그대로 재사용. **신규 파서 작성 금지**        |
+| `src/lib/notion.ts` — `normalizeNotionPageId()`, 에러 클래스 | 목록 경로의 ID 정규화 및 에러 분류에 재사용               |
+| `src/lib/format.ts` — 통화/날짜 포맷터                       | 목록 테이블 셀 렌더링에 재사용                            |
+| `src/components/ui/*` — Card, Badge, Button, Sonner          | 관리자 UI를 신규 컴포넌트 없이 조립                       |
+| `src/components/layout/*` — Header, Container                | 관리자 레이아웃이 감싸서 재사용                           |
+| `src/components/patterns/empty-state.tsx`                    | 목록 0건 상태에 그대로 사용                               |
 
 ### MVP에 존재하지 않아 신규 구축이 필요한 것
 
@@ -234,7 +234,7 @@ Phase 5의 골격 위에 실제 Notion 데이터베이스 쿼리를 연결합니
 
 - **Task 507: 관리자 로그인 및 접근 제어 적용** - 프로덕션 배포 선행 조건
   - **필수 이유**: `/admin`은 전체 클라이언트명·이메일·금액을 단일 URL로 노출하므로, 무인증 배포 시 정보 유출에 해당 (보안 경계 절 참조)
-  
+
   **인증 구현 방식 (결정됨): 환경 변수 기반 ID/PW 로그인**
   - `.env.local`에 관리자 계정 설정: `ADMIN_USERNAME=...`, `ADMIN_PASSWORD=...`
   - `.env.example`에 샘플 및 설정 안내 추가
@@ -246,11 +246,11 @@ Phase 5의 골격 위에 실제 Notion 데이터베이스 쿼리를 연결합니
   - 세션 만료 시간 설정 — `ADMIN_SESSION_MAX_AGE` 환경 변수로 제어 가능 (기본값: 7일)
   - 로그아웃 기능 — `/admin/logout` API 라우트로 쿠키 삭제 후 홈으로 리다이렉트
   - 인증 실패 시도에 대한 기본적인 지연 처리 검토 (예: 100ms 지연으로 브루트포스 완화)
-  
+
   **공개 조회 경로 보호**
   - `/invoice/[notionPageId]` 및 `/` 경로는 인증 없이 접근 가능해야 함
   - 미들웨어 matcher를 `/admin/*`로 정확히 제한하여 다른 경로 영향 없음
-  
+
   **보안 및 배포**
   - Vercel 배포 시 환경 변수(`ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`)를 Project Settings에 추가
   - 로컬 개발용 `.env.local` 예시를 `.env.example`에 포함
@@ -302,15 +302,15 @@ Phase 6 완료 후 실사용 피드백을 근거로 착수 여부를 판단합�
 
 ## 고도화 성공 기준
 
-| #   | 기준                                                              | 관련 Task     | 상태 |
-| --- | ----------------------------------------------------------------- | ------------- | ---- |
-| 1   | 관리자가 `/admin`에서 발행한 견적서 목록을 조회할 수 있음         | Task 504, 505 | ⬜   |
-| 2   | 목록에서 클릭 한 번으로 클라이언트 공유 링크를 복사할 수 있음     | Task 502, 506 | ⬜   |
-| 3   | 복사한 링크로 접근 시 견적서가 정상 조회됨                        | Task 506      | ⬜   |
-| 4   | 라이트 모드에서 견적서 표의 경계·헤더가 명확히 식별됨 (WCAG AA)   | Task 503      | ⬜   |
-| 5   | 다크 모드 가독성이 개선 이전 대비 저하되지 않음                   | Task 503      | ⬜   |
-| 6   | 인증 없이 `/admin`의 견적서 데이터에 접근할 수 없음               | Task 507      | ⬜   |
-| 7   | MVP 공개 조회 및 PDF 기능이 회귀 없이 동작함                      | Task 507-1    | ⬜   |
+| #   | 기준                                                            | 관련 Task     | 상태 |
+| --- | --------------------------------------------------------------- | ------------- | ---- |
+| 1   | 관리자가 `/admin`에서 발행한 견적서 목록을 조회할 수 있음       | Task 504, 505 | ⬜   |
+| 2   | 목록에서 클릭 한 번으로 클라이언트 공유 링크를 복사할 수 있음   | Task 502, 506 | ⬜   |
+| 3   | 복사한 링크로 접근 시 견적서가 정상 조회됨                      | Task 506      | ⬜   |
+| 4   | 라이트 모드에서 견적서 표의 경계·헤더가 명확히 식별됨 (WCAG AA) | Task 503      | ⬜   |
+| 5   | 다크 모드 가독성이 개선 이전 대비 저하되지 않음                 | Task 503      | ⬜   |
+| 6   | 인증 없이 `/admin`의 견적서 데이터에 접근할 수 없음             | Task 507      | ⬜   |
+| 7   | MVP 공개 조회 및 PDF 기능이 회귀 없이 동작함                    | Task 507-1    | ⬜   |
 
 ### Phase별 완료 정의 (Definition of Done)
 
