@@ -1,12 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Invoice, InvoiceItem } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/layout/container';
-import { Download, Mail, ArrowLeft, Copy } from 'lucide-react';
+import { Download, Mail, ArrowLeft, Copy, Check } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/lib/format';
 import { toast } from 'sonner';
 
@@ -16,19 +17,49 @@ interface InvoiceDetailProps {
 
 export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
   const router = useRouter();
+  const [isCopied, setIsCopied] = useState(false);
 
   const handleDownloadPDF = () => {
-    // 브라우저의 인쇄 기능 사용하여 PDF 다운로드
-    // (인쇄 미리보기 → PDF로 저장 옵션 사용)
-    window.print();
-    toast.success('인쇄 대화상자가 열렸습니다. "PDF로 저장"을 선택하세요.');
+    const element = document.querySelector('.invoice-print-area');
+    if (!element) {
+      console.error('Print area not found');
+      return;
+    }
+
+    const printWindow = window.open('', '', 'width=800,height=600');
+    if (!printWindow) {
+      toast.error('PDF 다운로드 창을 열 수 없습니다.');
+      return;
+    }
+
+    const htmlContent = element.innerHTML;
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${invoice.title}</title>
+          <style>
+            * { margin: 0; padding: 0; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+            @media print { body { margin: 0; padding: 20px; } }
+          </style>
+        </head>
+        <body onload="window.print();window.close();">
+          ${htmlContent}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const handleCopyLink = async () => {
     const url = `${window.location.origin}/invoice/${invoice.notionPageId}`;
     try {
       await navigator.clipboard.writeText(url);
-      toast.success('링크를 클립보드에 복사했습니다.');
+      setIsCopied(true);
+      toast.success('링크가 복사되었습니다!');
+      setTimeout(() => setIsCopied(false), 2000);
     } catch (error) {
       console.error('링크 복사 실패:', error);
       toast.error('링크 복사에 실패했습니다.');
@@ -220,9 +251,22 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
             <ArrowLeft className='h-4 w-4' />
             홈으로 돌아가기
           </Button>
-          <Button onClick={handleCopyLink} variant='outline' className='gap-2 w-full sm:w-auto'>
-            <Copy className='h-4 w-4' />
-            링크 복사
+          <Button
+            onClick={handleCopyLink}
+            variant={isCopied ? 'default' : 'outline'}
+            className='gap-2 w-full sm:w-auto transition-all'
+          >
+            {isCopied ? (
+              <>
+                <Check className='h-4 w-4' />
+                복사됨!
+              </>
+            ) : (
+              <>
+                <Copy className='h-4 w-4' />
+                링크 복사
+              </>
+            )}
           </Button>
           <Button onClick={handleDownloadPDF} variant='default' className='gap-2 w-full sm:w-auto'>
             <Download className='h-4 w-4' />
