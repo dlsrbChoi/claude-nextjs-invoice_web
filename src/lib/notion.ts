@@ -190,13 +190,30 @@ async function getInvoiceListFromNotionImpl(
       ...(filter && { filter }),
     };
 
-    // Notion 데이터베이스 쿼리 API 호출
-    const response = await fetch(`${NOTION_API_BASE_URL}/databases/${databaseId}/query`, {
-      method: 'POST',
-      headers: getNotionHeaders(),
-      body: JSON.stringify(requestBody),
-      ...getFetchCacheOptions(),
-    });
+    // Notion 데이터베이스 쿼리 API 호출 (타임아웃 10초)
+    let response: Response;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      response = await fetch(`${NOTION_API_BASE_URL}/databases/${databaseId}/query`, {
+        method: 'POST',
+        headers: getNotionHeaders(),
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+        ...getFetchCacheOptions(),
+      });
+
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        throw new NotionAPIError(`Notion API 요청 타임아웃 (10초). 서버 응답이 느립니다.`);
+      }
+      if (fetchError instanceof TypeError) {
+        throw new NotionAPIError(`네트워크 오류: ${fetchError.message}. 인터넷 연결을 확인하세요.`);
+      }
+      throw fetchError;
+    }
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -209,6 +226,9 @@ async function getInvoiceListFromNotionImpl(
           `이 데이터베이스에 접근할 수 있는 권한이 없습니다. Notion Integration 권한을 확인하세요.`
         );
       }
+      if (response.status === 429) {
+        throw new NotionAPIError(`Notion API 레이트 제한 도달. 잠시 후 다시 시도해주세요.`);
+      }
       const errorBody = await response.text();
       console.error('Notion DB 쿼리 에러:', {
         status: response.status,
@@ -219,12 +239,32 @@ async function getInvoiceListFromNotionImpl(
       throw new NotionAPIError(`Notion API 오류: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    type NotionDatabaseQueryResponse = {
+      results?: Array<{ id: string }>;
+      has_more?: boolean;
+      next_cursor?: string | null;
+    };
+
+    let data: NotionDatabaseQueryResponse;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      throw new NotionAPIError(
+        `Notion API 응답 파싱 실패: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`
+      );
+    }
 
     // 쿼리 결과에서 견적서 목록 파싱
     const invoices: InvoiceSummary[] = [];
+    const failedCount = { count: 0 };
 
-    for (const page of data.results || []) {
+    const results = (data.results || []) as unknown[];
+    if (results.length === 0) {
+      console.debug('Notion 쿼리 결과: 항목 없음');
+    }
+
+    for (let idx = 0; idx < results.length; idx++) {
+      const page = results[idx] as unknown;
       try {
         // 기존 파서를 재사용 (쿼리 결과의 page 구조는 단일 조회와 동일)
         const invoice = parseInvoiceFromNotionPage(page as NotionPageData);
@@ -249,9 +289,21 @@ async function getInvoiceListFromNotionImpl(
 
         invoices.push(summary);
       } catch (error) {
-        console.warn('견적서 파싱 실패:', error);
-        // 개별 항목 실패해도 계속 진행
+        failedCount.count += 1;
+        const pageId = (page as Record<string, unknown> | undefined)?.id || `index-${idx}`;
+        console.warn(
+          `견적서 파싱 실패 (${pageId}):`,
+          error instanceof Error ? error.message : String(error)
+        );
+        // 개별 항목 실패해도 계속 진행 (부분 성공 전략)
       }
+    }
+
+    // 부분 실패 감지
+    if (failedCount.count > 0) {
+      console.warn(
+        `Notion 목록 조회 부분 성공: ${invoices.length}/${results.length} (실패: ${failedCount.count})`
+      );
     }
 
     return {
@@ -260,18 +312,81 @@ async function getInvoiceListFromNotionImpl(
       nextCursor: data.next_cursor || undefined,
     };
   } catch (error) {
-    console.error('Notion 목록 조회 중 오류 발생:', error);
-    if (error instanceof NotionAPIError) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Notion 목록 조회 중 오류 발생:', errorMessage);
+
+    if (error instanceof NotionAPIError || error instanceof NotionConfigError) {
       throw error;
     }
-    throw new NotionAPIError(error instanceof Error ? error.message : '목록을 조회할 수 없습니다');
+
+    throw new NotionAPIError(errorMessage || '목록을 조회할 수 없습니다');
+  }
+}
+
+/**
+ * 에러 처리 및 폴백을 포함한 Notion 목록 조회
+ * @param databaseId Notion 데이터베이스 ID
+ * @param options 쿼리 옵션 및 폴백 전략
+ * @returns 견적서 요약 목록 (조회 실패 시 빈 배열)
+ */
+export async function getInvoiceListFromNotionWithFallback(
+  databaseId: string,
+  options: {
+    startCursor?: string;
+    pageSize?: number;
+    filter?: object;
+    fallbackToEmpty?: boolean; // 에러 시 빈 결과 반환 (기본값: true)
+  } = {}
+): Promise<InvoiceListResult> {
+  const { fallbackToEmpty = true, ...queryOptions } = options;
+
+  try {
+    return await getInvoiceListFromNotionImpl(databaseId, queryOptions);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // 에러 유형 분류 및 로깅
+    if (error instanceof NotionConfigError) {
+      console.error('Notion 설정 오류 (복구 불가):', errorMessage);
+      if (!fallbackToEmpty) {
+        throw error;
+      }
+    } else if (error instanceof NotionAPIError) {
+      console.error('Notion API 오류 (일시적일 수 있음):', errorMessage);
+      if (!fallbackToEmpty) {
+        throw error;
+      }
+    } else {
+      console.error('예상치 못한 오류:', error);
+      if (!fallbackToEmpty) {
+        throw new NotionAPIError(
+          error instanceof Error ? error.message : '목록을 조회할 수 없습니다'
+        );
+      }
+    }
+
+    // 폴백: 빈 결과 반환
+    console.warn(
+      `Notion 목록 조회 실패. 폴백 전략 적용 - 빈 결과 반환 (startCursor: ${queryOptions.startCursor || 'none'})`
+    );
+    return {
+      invoices: [],
+      hasMore: false,
+      nextCursor: undefined,
+    };
   }
 }
 
 /**
  * React.cache()를 사용한 메모이제이션된 목록 조회
+ * fallbackToEmpty: true로 설정하여 에러 시 자동 폴백
  */
-export const getInvoiceListFromNotion = cache(getInvoiceListFromNotionImpl);
+export const getInvoiceListFromNotion = cache((databaseId: string, options = {}) =>
+  getInvoiceListFromNotionWithFallback(databaseId, {
+    ...options,
+    fallbackToEmpty: true,
+  })
+);
 
 /**
  * Notion 페이지 정보 조회 (캐싱 포함)
