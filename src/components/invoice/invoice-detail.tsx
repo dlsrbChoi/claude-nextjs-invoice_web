@@ -115,7 +115,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
             <table className='w-full text-sm'>
               <caption className='sr-only'>견적서 항목 상세 정보</caption>
               <thead>
-                <tr className='border-b border-border'>
+                <tr className='bg-muted print:bg-transparent border-b-2 border-muted-foreground/40'>
                   <th scope='col' className='text-left font-semibold py-4 px-2 md:px-4'>
                     품명
                   </th>
@@ -135,7 +135,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
                   invoice.items.map((item) => (
                     <tr
                       key={item.id}
-                      className='border-b border-border hover:bg-muted/50 print:hover:bg-transparent'
+                      className='border-b border-muted-foreground/25 hover:bg-muted/50 print:hover:bg-transparent'
                     >
                       <td className='py-5 px-2 md:px-4'>
                         <div>
@@ -224,7 +224,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
  */
 function InvoiceItemCard({ item, currency }: { item: InvoiceItem; currency: string }) {
   return (
-    <div className='border border-border rounded-lg p-4 bg-background hover:bg-muted/30 transition-colors'>
+    <div className='border border-muted-foreground/30 rounded-lg p-4 bg-muted/20 hover:bg-muted/40 transition-colors'>
       <div className='space-y-3'>
         {/* 품명 및 설명 */}
         <div>
@@ -235,7 +235,7 @@ function InvoiceItemCard({ item, currency }: { item: InvoiceItem; currency: stri
         </div>
 
         {/* 수량, 단가, 합계 */}
-        <div className='grid grid-cols-3 gap-2 text-xs border-t border-border pt-3'>
+        <div className='grid grid-cols-3 gap-2 text-xs border-t border-muted-foreground/25 pt-3'>
           <div>
             <p className='text-muted-foreground mb-1'>수량</p>
             <p className='font-medium'>{item.quantity}</p>

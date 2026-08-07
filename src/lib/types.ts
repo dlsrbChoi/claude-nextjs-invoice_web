@@ -55,6 +55,22 @@ export interface Invoice {
 }
 
 /**
+ * 견적서 요약 정보 (관리자 목록 화면용)
+ * 상세 항목(items)을 제외한 견적서 정보
+ */
+export type InvoiceSummary = Omit<Invoice, 'items'>;
+
+/**
+ * 견적서 목록 조회 결과
+ * 페이지네이션을 위한 커서 기반 정보 포함
+ */
+export interface InvoiceListResult {
+  invoices: InvoiceSummary[];
+  hasMore: boolean;
+  nextCursor?: string;
+}
+
+/**
  * Notion 속성(Property) 타입들
  */
 
