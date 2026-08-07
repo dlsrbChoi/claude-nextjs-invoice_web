@@ -80,12 +80,17 @@ export function validateEmailShareRequest(request: EmailShareRequest): EmailShar
 }
 
 /**
- * 스텁 이메일 발송기
- * 실제 네트워크 호출 없이 항상 성공 결과를 반환한다.
- * Task 609(UI)에서 발송 흐름을 시뮬레이션하는 데 사용되며, Task 613에서
- * Resend 기반 구현체로 교체된다.
+ * Resend 기반 이메일 발송기 (Task 613)
+ * Resend API를 사용하여 실제 이메일을 발송한다.
+ * 환경 변수 EMAIL_API_KEY가 없으면 스텁 모드로 동작한다.
  */
-export class StubEmailSender implements EmailSender {
+export class ResendEmailSender implements EmailSender {
+  private apiKey: string | null;
+
+  constructor() {
+    this.apiKey = process.env.EMAIL_API_KEY || null;
+  }
+
   async send(request: EmailShareRequest, shareUrl: string): Promise<EmailSendResult> {
     const validation = validateEmailShareRequest(request);
     if (!validation.valid) {
@@ -95,22 +100,150 @@ export class StubEmailSender implements EmailSender {
       };
     }
 
-    // 스텁 구현: 실제 발송 없이 지연을 흉내 내고 성공 응답을 반환
-    console.debug('[email:stub] 발송 시뮬레이션', {
-      to: request.recipientEmail,
-      subject: request.subject,
-      shareUrl,
-    });
+    // API 키 미설정 시 스텁 모드
+    if (!this.apiKey) {
+      console.debug('[email:resend] API 키 미설정, 스텁 모드로 동작', {
+        to: request.recipientEmail,
+        subject: request.subject,
+      });
+      return {
+        success: true,
+        providerMessageId: `stub_${Date.now()}`,
+      };
+    }
 
-    return {
-      success: true,
-      providerMessageId: `stub_${Date.now()}`,
+    try {
+      // HTML 본문 구성
+      const htmlBody = this.buildHtmlEmail(request.message, shareUrl);
+
+      // Resend API 호출 (Node.js fetch 사용, 별도 패키지 불필요)
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: process.env.EMAIL_FROM_ADDRESS || 'noreply@example.com',
+          to: request.recipientEmail,
+          subject: request.subject,
+          html: htmlBody,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          typeof errorData === 'object' && errorData !== null && 'message' in errorData
+            ? String(errorData.message)
+            : `이메일 발송 서비스 오류 (${response.status})`;
+
+        console.error('[email:resend] 발송 실패', {
+          status: response.status,
+          error: errorMessage,
+          to: request.recipientEmail,
+        });
+
+        return {
+          success: false,
+          failureReason: '이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.',
+        };
+      }
+
+      const data = await response.json();
+      const messageId =
+        typeof data === 'object' && data !== null && 'id' in data
+          ? String(data.id)
+          : `msg_${Date.now()}`;
+
+      console.debug('[email:resend] 발송 성공', {
+        to: request.recipientEmail,
+        messageId,
+      });
+
+      return {
+        success: true,
+        providerMessageId: messageId,
+      };
+    } catch (error) {
+      console.error('[email:resend] 예외 발생', {
+        error: error instanceof Error ? error.message : String(error),
+        to: request.recipientEmail,
+      });
+
+      return {
+        success: false,
+        failureReason: '이메일 발송 중 오류가 발생했습니다. 관리자에게 문의해주세요.',
+      };
+    }
+  }
+
+  /**
+   * HTML 이메일 본문 생성
+   */
+  private buildHtmlEmail(userMessage: string, shareUrl: string): string {
+    // 사용자 메시지에서 HTML 특수문자 이스케이프 (XSS 방지)
+    const escapeHtml = (text: string): string => {
+      const map: Record<string, string> = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      };
+      return text.replace(/[&<>"']/g, (char) => map[char]);
     };
+
+    const escapedMessage = escapeHtml(userMessage);
+
+    return `
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #f5f5f5; padding: 20px; border-radius: 8px 8px 0 0; }
+    .content { background-color: #ffffff; border: 1px solid #e0e0e0; padding: 20px; }
+    .footer { background-color: #f5f5f5; padding: 20px; border-radius: 0 0 8px 8px; }
+    .button { display: inline-block; background-color: #0066cc; color: white; padding: 12px 24px; border-radius: 4px; text-decoration: none; margin-top: 20px; }
+    .divider { border-top: 1px solid #e0e0e0; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 24px;">견적서 공유</h1>
+    </div>
+    <div class="content">
+      <p>안녕하세요,</p>
+      <div style="white-space: pre-wrap; background-color: #f9f9f9; padding: 12px; border-left: 3px solid #0066cc; margin: 16px 0;">
+${escapedMessage}
+      </div>
+      <div class="divider"></div>
+      <p>아래 버튼을 클릭하여 견적서를 확인해주세요:</p>
+      <a href="${escapeHtml(shareUrl)}" class="button">견적서 보기</a>
+      <p style="margin-top: 20px; font-size: 12px; color: #999;">
+        위 버튼이 작동하지 않으면 다음 링크를 복사하여 브라우저에 붙여넣어주세요:<br>
+        <code style="background-color: #f5f5f5; padding: 4px 8px; border-radius: 4px;">${escapeHtml(shareUrl)}</code>
+      </p>
+    </div>
+    <div class="footer">
+      <p style="margin: 0; font-size: 12px; color: #666;">
+        이 이메일은 자동으로 발송되었습니다. 궁금한 점이 있으시면 발송인에게 문의해주세요.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+    `.trim();
   }
 }
 
 /**
  * 현재 활성화된 이메일 발송기
- * Task 613에서 실제 구현체로 교체될 때까지 스텁을 사용한다.
+ * Resend 기반 구현체 (API 키 없으면 스텁 모드)
  */
-export const emailSender: EmailSender = new StubEmailSender();
+export const emailSender: EmailSender = new ResendEmailSender();

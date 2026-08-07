@@ -26,7 +26,7 @@ import { Field, FieldLabel, FieldError, FieldGroup, FieldDescription } from '@/c
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { emailSender, validateEmailShareRequest } from '@/lib/email';
+import { validateEmailShareRequest } from '@/lib/email';
 import { EMAIL_SHARE_LIMITS, type EmailShareRequest } from '@/lib/types';
 
 interface EmailShareDialogProps {
@@ -95,17 +95,43 @@ export function EmailShareDialog({
     setErrors([]);
     setStatus('sending');
 
-    const result = await emailSender.send(request, shareUrl);
+    try {
+      // 서버 API 호출 (Task 613)
+      const response = await fetch('/api/admin/share-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+      });
 
-    if (result.success) {
-      setStatus('success');
-      toast.success('이메일을 발송했습니다.');
-      setOpen(false);
-      resetForm();
-    } else {
-      // 실패 시 Dialog는 유지하여 재시도할 수 있게 한다.
+      if (!response.ok) {
+        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        const errorMessage =
+          typeof errorData.error === 'string' ? errorData.error : '이메일 발송에 실패했습니다.';
+        const details = Array.isArray(errorData.details) ? errorData.details : [];
+
+        setStatus('error');
+        setErrors(details.length > 0 ? details : [errorMessage]);
+        toast.error(errorMessage);
+        return;
+      }
+
+      const result = (await response.json()) as Record<string, unknown>;
+
+      if (result.success === true) {
+        setStatus('success');
+        toast.success('이메일을 발송했습니다.');
+        setOpen(false);
+        resetForm();
+      } else {
+        setStatus('error');
+        const message =
+          typeof result.message === 'string' ? result.message : '이메일 발송에 실패했습니다.';
+        setErrors([message]);
+        toast.error(message);
+      }
+    } catch (error) {
       setStatus('error');
-      const message = result.failureReason || '이메일 발송에 실패했습니다.';
+      const message = error instanceof Error ? error.message : '네트워크 오류가 발생했습니다.';
       setErrors([message]);
       toast.error(message);
     }

@@ -10,6 +10,7 @@ import { formatDate, formatCurrency } from '@/lib/format';
 import { Copy, Check, ChevronRight } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
+import { EmailShareDialog } from './email-share-dialog';
 
 interface InvoiceListTableProps {
   invoices: InvoiceSummary[];
@@ -141,6 +142,11 @@ export function InvoiceListTable({ invoices, isLoading, onCopyLink }: InvoiceLis
                 </td>
                 <td className='py-4 px-4'>
                   <div className='flex items-center justify-end gap-2'>
+                    <EmailShareDialog
+                      notionPageId={invoice.notionPageId}
+                      defaultRecipientEmail={invoice.clientEmail}
+                      invoiceTitle={invoice.title}
+                    />
                     <Tooltip>
                       <TooltipTrigger
                         render={
