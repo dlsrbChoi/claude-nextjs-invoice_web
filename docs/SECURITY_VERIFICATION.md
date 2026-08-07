@@ -292,3 +292,74 @@ curl -s https://invoice-web.vercel.app/_next/static/chunks/main*.js | grep "sk-"
 - ✅ Vercel 대시보드에서 안전하게 관리
 
 **✅ Task 011-3 완료** - API 키 보안 검증 완료
+
+---
+
+## 🔐 관리자 세션 위조 차단 검증 (Task 601, v3.0)
+
+### 배경 — 발견된 취약점
+
+v2.0의 관리자 인증 구현(`src/app/api/auth/login/route.ts`, `src/middleware.ts`)에는 다음 결함이 있었다.
+
+- 로그인 성공 시 발급되는 세션 토큰이 `admin_${Date.now()}_${랜덤문자열}` 형태의 **평문**이었고, 서버는 이 값을 어디에도 저장(세션 스토어, DB 등)하지 않았다.
+- 미들웨어는 `admin_session` 쿠키의 **존재 여부와 비어 있지 않음만** 검사했다 (`if (!sessionCookie || !sessionCookie.value)`).
+
+즉 공격자가 브라우저 콘솔이나 `curl`로 `admin_session=anything`이라는 임의의 쿠키를 설정하기만 하면, 비밀번호 없이 `/admin` 전체(클라이언트명·이메일·금액)에 접근할 수 있었다. **이론적 위험이 아닌 즉시 악용 가능한 결함**이었다.
+
+### 조치 내용
+
+| 항목            | v2.0 (취약)                       | v3.0 (Task 601 이후)                                                 |
+| --------------- | --------------------------------- | -------------------------------------------------------------------- |
+| 토큰 형식       | 평문 타임스탬프+랜덤 문자열       | `v1.<base64url(payload)>.<base64url(HMAC-SHA256 서명)>`              |
+| 검증 방식       | 쿠키 존재 여부만 확인             | 서명 재계산 후 `crypto.timingSafeEqual`로 비교, 만료 시각(exp) 검증  |
+| 비밀번호 비교   | `===` (타이밍 공격에 취약)        | `crypto.timingSafeEqual` 기반 (`src/lib/auth.ts: timingSafeCompare`) |
+| 라우팅 파일     | `src/middleware.ts` (Edge 런타임) | `src/proxy.ts` (Next.js 16 컨벤션, Node.js 런타임)                   |
+| 브루트포스 완화 | 없음                              | 로그인 실패 시 응답 지연 (`LOGIN_FAILURE_DELAY_MS = 300ms`)          |
+| 시크릿 관리     | 없음 (토큰 자체가 시크릿 불필요)  | `ADMIN_SESSION_SECRET` 환경 변수 (서명 키, 절대 커밋 금지)           |
+
+### Next.js 16 `proxy.ts`로의 전환에 대하여
+
+Next.js 16.2.12부터 `middleware.ts` 파일 컨벤션은 **deprecated**되었고 `proxy.ts`로 대체되었다. 기존 `middleware`는 Edge 런타임에서 실행되어 Node.js 내장 `crypto` 모듈(HMAC, `timingSafeEqual`)을 사용할 수 없었으나, **`proxy`는 Node.js 런타임을 기본으로 사용**하므로 (`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md` 버전 히스토리: "v16.0.0 | Proxy defaults to the Node.js runtime") `src/lib/auth.ts`의 Node `crypto` 기반 검증 로직을 별도의 Web Crypto 폴리필 없이 그대로 재사용할 수 있다. 이에 따라 `src/middleware.ts`는 삭제하고 `src/proxy.ts`로 전환했다.
+
+### 검증 체크리스트 (Playwright MCP 대상)
+
+- [ ] `admin_session=fake`와 같은 임의 쿠키를 주입한 뒤 `/admin` 접근 시 `/login`으로 리다이렉트됨 (**회귀 방지 핵심**)
+- [ ] 정상 로그인 후 발급된 쿠키로 `/admin` 접근이 정상 동작함
+- [ ] 발급된 쿠키 값의 서명 부분을 1글자 변조한 뒤 접근 시 차단됨
+- [ ] `ADMIN_SESSION_MAX_AGE`를 지난 만료 토큰으로 접근 시 `/login`으로 리다이렉트됨
+- [ ] 잘못된 비밀번호 입력 시 401 응답 및 에러 메시지가 표시되고, 쿠키는 발급되지 않음
+- [ ] 공개 경로(`/`, `/invoice/[notionPageId]`)는 인증 없이 접근 가능함 (회귀 확인)
+- [ ] 쿠키의 `HttpOnly`, `Secure`(프로덕션), `SameSite=Lax` 플래그가 유지됨
+- [ ] `/api/admin/*` 경로에 미인증 상태로 직접 접근 시 401 JSON 응답을 받음
+
+### 관련 파일
+
+- `src/lib/auth.ts` — HMAC 서명 발급/검증, 타이밍 세이프 비교
+- `src/proxy.ts` — 경로 보호 (구 `src/middleware.ts` 대체)
+- `src/app/api/auth/login/route.ts` — 서명 토큰 발급으로 교체
+- `src/app/api/auth/logout/route.ts` — 쿠키 이름 상수 재사용
+- `.env.example`, `.env.local` — `ADMIN_SESSION_SECRET`, `ADMIN_SESSION_MAX_AGE` 추가
+
+### 부록 — 검증 중 발견된 별개 버그: 전역 캐시 헤더로 인한 로그인 무한 리다이렉트
+
+Task 601 구현을 Playwright로 실제 브라우저 검증하는 과정에서, 세션 로직과 무관한 **별개의 버그**를 발견하여 함께 수정했다.
+
+**증상**: 정상적으로 로그인에 성공한 뒤에도, 브라우저에서 `/admin`을 다시 방문(주소창 재입력, 새로고침 등 하드 네비게이션)하면 `/login`으로 계속 튕기는 현상이 재현되었다. curl로는 재현되지 않고 Playwright(Chromium)에서만 재현되어, 처음에는 브라우저별 쿠키 처리 문제로 의심했다.
+
+**원인 진단 과정**:
+
+1. 발급된 세션 토큰의 서명·만료 시각을 Node REPL에서 직접 재계산해 서버 검증 로직과 대조 → 일치함을 확인 (`src/lib/auth.ts` 로직 자체는 정상)
+2. Playwright의 CDP 세션으로 실제 저장된 쿠키를 조회 → `httpOnly`, `secure: false`, `sameSite: Lax`, 만료 시각 모두 정상
+3. `src/proxy.ts`에 임시 디버그 로그(`console.log`)를 추가해 서버가 요청을 실제로 받는지 확인 → **재현 시점에 프록시 함수가 아예 호출되지 않음**을 발견. 즉 요청이 서버에 도달하지 않고 있었음
+4. `curl -D -`로 `/admin`(미인증)의 응답 헤더를 확인한 결과, `next.config.ts`의 전역 헤더 설정(`source: '/:path*'`, `Cache-Control: public, max-age=3600, stale-while-revalidate=86400`)이 **307 리다이렉트 응답에도 그대로 적용**되고 있었음을 확인
+
+**근본 원인**: `next.config.ts`의 `headers()` 설정이 모든 경로(`/:path*`)에 무차별적으로 `public, max-age=3600` 캐시 정책을 적용하고 있었다. 이 설정 자체는 v1.0부터 존재했으나, v2.0까지는 `/admin`의 인증이 사실상 무의미했기 때문에(쿠키 존재 여부만 검사) 이 문제가 드러나지 않았다. Task 601로 정상적인 서명 검증이 도입되면서, "미인증 상태에서 `/admin` → `/login` 리다이렉트"라는 정상 응답이 **브라우저에 1시간 동안 캐시**되어, 이후 로그인에 성공해도 브라우저가 캐시된 리다이렉트를 재생하며 서버(및 `proxy.ts`)에 요청을 아예 보내지 않는 문제로 이어졌다. 이는 실제 프로덕션 사용자도 동일하게 겪을 수 있는 버그였다.
+
+**조치**: `next.config.ts`의 캐시 헤더 규칙을 두 개로 분리했다.
+
+- 공개 콘텐츠(`/`, `/invoice/[id]` 등, `admin|api/admin|login|api/auth` 제외)만 기존 `public, max-age=3600, stale-while-revalidate=86400` 유지
+- `/admin`, `/admin/:path*`, `/api/admin/:path*`, `/login`, `/api/auth/:path*` 는 `Cache-Control: no-store, must-revalidate`로 항상 서버 재검증하도록 강제
+
+**검증**: 브라우저 캐시를 초기화한 뒤 로그인 → `/admin` → `/admin/invoices` → `/admin/clients` → `/admin` 순으로 반복 이동해도 매번 정상적으로 세션이 유지됨을 확인했다. 로그아웃 후에는 `/admin` 재접근이 다시 `/login`으로 정확히 차단됨도 확인했다.
+
+**교훈**: 인증이 걸린 경로의 리다이렉트/에러 응답은 원칙적으로 캐시되어서는 안 된다. 향후 `next.config.ts`의 `headers()`나 유사한 전역 캐시 규칙을 수정할 때는 반드시 인증 경로(`/admin`, `/api/admin`, `/login`, `/api/auth`)가 제외되어 있는지 확인할 것.

@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * 관리자 대시보드 에러 바운더리
- * 대시보드 데이터 집계 중 오류 발생 시 사용자 친화적인 UI를 표시합니다.
+ * 관리자 페이지 에러 바운더리
+ * 견적서 목록 조회 중 오류 발생 시 사용자 친화적인 UI를 표시합니다.
  */
 
 import { useEffect } from 'react';
@@ -11,15 +11,15 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Link from 'next/link';
 
-interface AdminDashboardErrorProps {
+interface AdminErrorProps {
   error: Error & { digest?: string };
   reset: () => void;
 }
 
-export default function AdminDashboardError({ error, reset }: AdminDashboardErrorProps) {
+export default function AdminError({ error, reset }: AdminErrorProps) {
   useEffect(() => {
     // 에러를 콘솔에 기록 (실제 환경에서는 에러 추적 서비스로 전송)
-    console.error('Admin dashboard error:', error);
+    console.error('Admin page error:', error);
   }, [error]);
 
   return (
@@ -33,12 +33,12 @@ export default function AdminDashboardError({ error, reset }: AdminDashboardErro
 
       {/* 제목 */}
       <h1 className='text-3xl md:text-4xl font-bold mb-3 text-center'>
-        대시보드를 불러올 수 없습니다
+        견적서 목록을 불러올 수 없습니다
       </h1>
 
       {/* 설명 */}
       <p className='text-muted-foreground text-center mb-8 max-w-md leading-relaxed'>
-        죄송합니다. 대시보드 데이터를 불러오는 중에 예기치 않은 문제가 발생했습니다. 다시 시도하거나
+        죄송합니다. 견적서 목록을 불러오는 중에 예기치 않은 문제가 발생했습니다. 다시 시도하거나
         처음 페이지로 돌아가주세요.
       </p>
 

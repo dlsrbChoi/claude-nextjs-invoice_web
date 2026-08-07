@@ -1,10 +1,26 @@
 /**
  * POST /api/auth/login
  * 관리자 로그인 처리
- * HTTP-only 세션 쿠키 설정
+ * HMAC 서명 기반 세션 토큰을 발급하고 HTTP-only 쿠키로 설정
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  SESSION_COOKIE_NAME,
+  getSessionMaxAgeSeconds,
+  issueSessionToken,
+  timingSafeCompare,
+} from '@/lib/auth';
+
+/**
+ * 브루트포스 완화를 위한 최소 응답 지연 (밀리초)
+ * 로그인 실패 시 일정 시간을 대기시켜 자동화된 시도 비용을 높임
+ */
+const LOGIN_FAILURE_DELAY_MS = 300;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +28,7 @@ export async function POST(request: NextRequest) {
     const { password } = body;
 
     if (!password || typeof password !== 'string') {
+      await delay(LOGIN_FAILURE_DELAY_MS);
       return NextResponse.json({ error: '비밀번호가 필요합니다.' }, { status: 400 });
     }
 
@@ -21,25 +38,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '서버 설정 오류' }, { status: 500 });
     }
 
-    // 비밀번호 검증
-    if (password !== adminPassword) {
+    // 타이밍 공격에 안전한 비교로 비밀번호 검증
+    if (!timingSafeCompare(password, adminPassword)) {
+      await delay(LOGIN_FAILURE_DELAY_MS);
       return NextResponse.json({ error: '비밀번호가 잘못되었습니다.' }, { status: 401 });
     }
 
-    // 세션 토큰 생성 (간단한 UUID 기반)
-    const sessionToken = `admin_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    // HMAC 서명 기반 세션 토큰 발급 (만료 시각 포함)
+    let sessionToken: string;
+    try {
+      sessionToken = issueSessionToken();
+    } catch (error) {
+      console.error('세션 토큰 발급 실패 (ADMIN_SESSION_SECRET 확인 필요):', error);
+      return NextResponse.json({ error: '서버 설정 오류' }, { status: 500 });
+    }
 
-    // 응답 생성
     const response = NextResponse.json({ success: true, message: '로그인 성공' }, { status: 200 });
 
-    // HTTP-only 세션 쿠키 설정 (60분 유효)
     response.cookies.set({
-      name: 'admin_session',
+      name: SESSION_COOKIE_NAME,
       value: sessionToken,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60, // 60분
+      maxAge: getSessionMaxAgeSeconds(),
       path: '/',
     });
 

@@ -5,6 +5,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { SESSION_COOKIE_NAME } from '@/lib/auth';
 
 export async function POST() {
   try {
@@ -15,7 +16,7 @@ export async function POST() {
 
     // 세션 쿠키 삭제 (maxAge: 0)
     response.cookies.set({
-      name: 'admin_session',
+      name: SESSION_COOKIE_NAME,
       value: '',
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

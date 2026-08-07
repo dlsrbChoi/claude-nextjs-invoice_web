@@ -438,6 +438,98 @@ const notes = extractTextProperty(properties, 'notes'); // 비고
 
 ---
 
+## 🚩 v3.0 부록: Reports 데이터베이스 설정 (Task 606)
+
+신고 관리(F035) 기능을 위해 `Reports`라는 별도의 Notion 데이터베이스를 신설합니다. 기존 `Invoices`/`InvoiceItems`와 같은 워크스페이스에 생성하고, 동일한 Integration에 접근 권한을 부여하세요.
+
+> **참고**: 이 데이터베이스는 Task 606(타입 설계) 시점에는 스키마만 정의합니다. 실제 조회 연동은 Task 614에서 `getReportListFromNotion()`으로 구현됩니다. 접수 경로는 v3.0에서 **관리자 수동 등록으로 한정**하며, 공개 접수(비인증 제출)는 이번 범위에 포함하지 않습니다.
+
+### Reports 데이터베이스 속성 스키마
+
+**1. 신고 제목 (Title)**
+
+```
+속성명: 제목 (기본 Title 속성)
+타입: Title
+필수: ✅ Yes
+설명: 신고 건을 식별하기 위한 짧은 제목 (예: "견적서 금액 오류 신고")
+```
+
+**2. target_invoice (Relation)**
+
+```
+속성명: target_invoice
+타입: Relation
+연결 대상: Invoices 데이터베이스
+필수: ✅ Yes
+설명: 신고 대상 견적서. 목록 화면에서 대상 견적서로 이동하는 링크에 사용
+```
+
+**3. reason (Rich Text)**
+
+```
+속성명: reason
+타입: Rich Text
+필수: ✅ Yes
+설명: 신고 사유. 제3자 입력이므로 관리자 화면 렌더링 시 반드시 이스케이프 처리 (저장형 XSS 방지)
+```
+
+**4. reporter_name (Rich Text)**
+
+```
+속성명: reporter_name
+타입: Rich Text
+필수: ✅ Yes
+```
+
+**5. reporter_email (Email)**
+
+```
+속성명: reporter_email
+타입: Email
+필수: ⬜ No (선택, 회신용)
+```
+
+**6. status (Select)**
+
+```
+속성명: status
+타입: Select
+옵션: pending(대기) / reviewing(검토 중) / resolved(해결) / dismissed(기각)
+기본값: pending
+필수: ✅ Yes
+```
+
+**7. resolution_note (Rich Text)**
+
+```
+속성명: resolution_note
+타입: Rich Text
+필수: ⬜ No (처리 시 관리자가 남기는 메모)
+```
+
+**8. submitted_at (Created time, 자동)**
+
+```
+속성명: submitted_at
+타입: Created time
+설명: 페이지 생성 시각을 접수 시각으로 사용 (Notion이 자동 기록)
+```
+
+### Integration 권한 부여
+
+`Invoices` 데이터베이스와 동일한 절차로, `Reports` 데이터베이스 우측 상단 "공유" → Integration 초대 → View/Update 권한을 부여합니다. 상태 변경(PATCH)이 필요하므로 **Update 권한은 필수**입니다.
+
+### 환경 변수
+
+```env
+NOTION_REPORTS_DATABASE_ID=your_reports_database_id_here
+```
+
+`.env.example`에 이미 안내가 추가되어 있습니다 (Task 606).
+
+---
+
 ## 📚 참고 자료
 
 - [Notion API 문서](https://developers.notion.com/)

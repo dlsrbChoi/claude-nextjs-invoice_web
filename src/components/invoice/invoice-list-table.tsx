@@ -5,9 +5,10 @@ import { InvoiceSummary } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDate, formatCurrency } from '@/lib/format';
-import { Copy, ChevronRight } from 'lucide-react';
-import { useCallback } from 'react';
+import { Copy, Check, ChevronRight } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 interface InvoiceListTableProps {
@@ -16,13 +17,30 @@ interface InvoiceListTableProps {
   onCopyLink?: (notionPageId: string) => void;
 }
 
+/** 복사 성공 시 아이콘을 되돌리기까지의 시간 (ms) */
+const COPY_FEEDBACK_DURATION = 2000;
+
 export function InvoiceListTable({ invoices, isLoading, onCopyLink }: InvoiceListTableProps) {
+  // 방금 복사된 견적서 id (2초간 Copy → Check 아이콘 전환에 사용)
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
   const handleCopyLink = useCallback(
-    (notionPageId: string) => {
+    async (invoice: InvoiceSummary) => {
+      const notionPageId = invoice.notionPageId;
       const url = `${window.location.origin}/invoice/${notionPageId}`;
-      navigator.clipboard.writeText(url);
-      toast.success('링크를 클립보드에 복사했습니다.');
-      onCopyLink?.(notionPageId);
+
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success('링크를 클립보드에 복사했습니다.', { id: 'copy-link' });
+        setCopiedId(invoice.id);
+        setTimeout(() => {
+          setCopiedId((current) => (current === invoice.id ? null : current));
+        }, COPY_FEEDBACK_DURATION);
+        onCopyLink?.(notionPageId);
+      } catch {
+        // 클립보드 접근 실패(권한 없음, 비보안 컨텍스트 등) - 직접 선택 복사할 수 있도록 URL 노출
+        toast.error(`링크 복사에 실패했습니다. 직접 복사해주세요: ${url}`, { id: 'copy-link' });
+      }
     },
     [onCopyLink]
   );
@@ -123,15 +141,26 @@ export function InvoiceListTable({ invoices, isLoading, onCopyLink }: InvoiceLis
                 </td>
                 <td className='py-4 px-4'>
                   <div className='flex items-center justify-end gap-2'>
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      onClick={() => handleCopyLink(invoice.notionPageId)}
-                      className='gap-2'
-                    >
-                      <Copy className='h-4 w-4' />
-                      <span className='sr-only'>링크 복사</span>
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            onClick={() => handleCopyLink(invoice)}
+                            className='gap-2'
+                          >
+                            {copiedId === invoice.id ? (
+                              <Check className='h-4 w-4' />
+                            ) : (
+                              <Copy className='h-4 w-4' />
+                            )}
+                            <span className='sr-only'>링크 복사</span>
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>{`/invoice/${invoice.notionPageId}`}</TooltipContent>
+                    </Tooltip>
                     <Link href={`/invoice/${invoice.notionPageId}`}>
                       <Button variant='ghost' size='sm' className='gap-2'>
                         <ChevronRight className='h-4 w-4' />
@@ -149,7 +178,12 @@ export function InvoiceListTable({ invoices, isLoading, onCopyLink }: InvoiceLis
       {/* 모바일 뷰 - 카드 리스트 */}
       <div className='md:hidden space-y-3'>
         {invoices.map((invoice) => (
-          <InvoiceListCard key={invoice.id} invoice={invoice} onCopyLink={handleCopyLink} />
+          <InvoiceListCard
+            key={invoice.id}
+            invoice={invoice}
+            onCopyLink={handleCopyLink}
+            isCopied={copiedId === invoice.id}
+          />
         ))}
       </div>
     </div>
@@ -162,9 +196,11 @@ export function InvoiceListTable({ invoices, isLoading, onCopyLink }: InvoiceLis
 function InvoiceListCard({
   invoice,
   onCopyLink,
+  isCopied,
 }: {
   invoice: InvoiceSummary;
-  onCopyLink: (notionPageId: string) => void;
+  onCopyLink: (invoice: InvoiceSummary) => void;
+  isCopied: boolean;
 }) {
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -238,11 +274,11 @@ function InvoiceListCard({
               size='sm'
               onClick={(e) => {
                 e.preventDefault();
-                onCopyLink(invoice.notionPageId);
+                onCopyLink(invoice);
               }}
               className='flex-1 gap-2'
             >
-              <Copy className='h-4 w-4' />
+              {isCopied ? <Check className='h-4 w-4' /> : <Copy className='h-4 w-4' />}
               복사
             </Button>
             <Button
