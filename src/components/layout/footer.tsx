@@ -1,4 +1,3 @@
-import { Separator } from '@/components/ui/separator';
 import { Container } from './container';
 
 export function Footer() {
