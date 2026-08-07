@@ -4,7 +4,13 @@
  */
 
 import { cache } from 'react';
-import type { Invoice, InvoiceItem, NotionPageData } from './types';
+import type {
+  Invoice,
+  InvoiceItem,
+  NotionPageData,
+  InvoiceSummary,
+  InvoiceListResult,
+} from './types';
 import { getMockInvoice } from './mock-data';
 import {
   parseInvoiceFromNotionPage,
@@ -151,6 +157,121 @@ async function getInvoiceFromNotionImpl(pageId: string): Promise<Invoice> {
  * (60초 revalidate와 독립적으로 작동)
  */
 export const getInvoiceFromNotion = cache(getInvoiceFromNotionImpl);
+
+/**
+ * Notion 데이터베이스에서 견적서 목록 조회 (관리자용)
+ * @param databaseId Notion 데이터베이스 ID
+ * @param options 쿼리 옵션 (커서, 페이지 크기, 필터)
+ * @returns 견적서 요약 목록 및 페이지네이션 정보
+ * @throws {NotionConfigError} NOTION_DATABASE_ID 미설정
+ * @throws {NotionAPIError} 기타 API 오류
+ */
+async function getInvoiceListFromNotionImpl(
+  databaseId: string,
+  options: {
+    startCursor?: string;
+    pageSize?: number;
+    filter?: object;
+  } = {}
+): Promise<InvoiceListResult> {
+  try {
+    const { startCursor, pageSize = 25, filter } = options;
+
+    // 요청 본문 구성
+    const requestBody = {
+      sorts: [
+        {
+          property: NOTION_PROPERTY_KEYS.invoices.issueDate,
+          direction: 'descending' as const,
+        },
+      ],
+      page_size: pageSize,
+      ...(startCursor && { start_cursor: startCursor }),
+      ...(filter && { filter }),
+    };
+
+    // Notion 데이터베이스 쿼리 API 호출
+    const response = await fetch(`${NOTION_API_BASE_URL}/databases/${databaseId}/query`, {
+      method: 'POST',
+      headers: getNotionHeaders(),
+      body: JSON.stringify(requestBody),
+      ...getFetchCacheOptions(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new NotionConfigError(
+          `데이터베이스를 찾을 수 없습니다. NOTION_DATABASE_ID를 확인하세요.`
+        );
+      }
+      if (response.status === 403) {
+        throw new NotionConfigError(
+          `이 데이터베이스에 접근할 수 있는 권한이 없습니다. Notion Integration 권한을 확인하세요.`
+        );
+      }
+      const errorBody = await response.text();
+      console.error('Notion DB 쿼리 에러:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody,
+        databaseId,
+      });
+      throw new NotionAPIError(`Notion API 오류: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // 쿼리 결과에서 견적서 목록 파싱
+    const invoices: InvoiceSummary[] = [];
+
+    for (const page of data.results || []) {
+      try {
+        // 기존 파서를 재사용 (쿼리 결과의 page 구조는 단일 조회와 동일)
+        const invoice = parseInvoiceFromNotionPage(page as NotionPageData);
+
+        // InvoiceSummary로 변환 (items 필드 제외)
+        const summary: InvoiceSummary = {
+          id: invoice.id,
+          notionPageId: invoice.notionPageId,
+          title: invoice.title,
+          invoiceNumber: invoice.invoiceNumber,
+          clientName: invoice.clientName,
+          clientEmail: invoice.clientEmail,
+          issueDate: invoice.issueDate,
+          validUntil: invoice.validUntil,
+          notes: invoice.notes,
+          totalAmount: invoice.totalAmount,
+          currency: invoice.currency,
+          status: invoice.status,
+          createdAt: invoice.createdAt,
+          updatedAt: invoice.updatedAt,
+        };
+
+        invoices.push(summary);
+      } catch (error) {
+        console.warn('견적서 파싱 실패:', error);
+        // 개별 항목 실패해도 계속 진행
+      }
+    }
+
+    return {
+      invoices,
+      hasMore: data.has_more || false,
+      nextCursor: data.next_cursor || undefined,
+    };
+  } catch (error) {
+    console.error('Notion 목록 조회 중 오류 발생:', error);
+    if (error instanceof NotionAPIError) {
+      throw error;
+    }
+    throw new NotionAPIError(error instanceof Error ? error.message : '목록을 조회할 수 없습니다');
+  }
+}
+
+/**
+ * React.cache()를 사용한 메모이제이션된 목록 조회
+ */
+export const getInvoiceListFromNotion = cache(getInvoiceListFromNotionImpl);
 
 /**
  * Notion 페이지 정보 조회 (캐싱 포함)
