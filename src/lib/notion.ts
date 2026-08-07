@@ -174,10 +174,19 @@ async function fetchNotionPage(pageId: string): Promise<NotionPageData> {
         `이 페이지에 접근할 수 있는 권한이 없습니다. Notion Integration 권한을 확인하세요.`
       );
     }
+    const errorBody = await response.text();
+    console.error('Notion API 상세 에러:', {
+      status: response.status,
+      statusText: response.statusText,
+      body: errorBody,
+      pageId,
+    });
     throw new NotionAPIError(`Notion API 오류: ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log('Notion 페이지 데이터 (Properties):', Object.keys(data.properties || {}));
+  return data;
 }
 
 /**
@@ -267,11 +276,11 @@ export function normalizeNotionPageId(pageId: string): string {
   // 하이픈 제거하여 정규화
   const cleaned = extractedId.replace(/-/g, '');
 
-  // 32자 hex 확인
-  if (cleaned.length !== 32 || !/^[a-f0-9]{32}$/i.test(cleaned)) {
+  // 32자 alphanumeric 확인
+  if (cleaned.length !== 32 || !/^[a-z0-9]{32}$/i.test(cleaned)) {
     throw new NotionInvalidPageIdError(pageId);
   }
 
-  // 표준 UUID 형식으로 변환: 8-4-4-4-12
-  return `${cleaned.substring(0, 8)}-${cleaned.substring(8, 12)}-${cleaned.substring(12, 16)}-${cleaned.substring(16, 20)}-${cleaned.substring(20)}`;
+  // Notion API는 하이픈이 없는 32자 형식을 요구함
+  return cleaned;
 }

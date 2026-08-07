@@ -1,11 +1,12 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Invoice, InvoiceItem } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/layout/container';
-import { Download, Mail } from 'lucide-react';
+import { Download, Mail, ArrowLeft } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/lib/format';
 import { toast } from 'sonner';
 
@@ -14,11 +15,17 @@ interface InvoiceDetailProps {
 }
 
 export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
+  const router = useRouter();
+
   const handleDownloadPDF = () => {
     // 브라우저의 인쇄 기능 사용하여 PDF 다운로드
     // (인쇄 미리보기 → PDF로 저장 옵션 사용)
     window.print();
     toast.success('인쇄 대화상자가 열렸습니다. "PDF로 저장"을 선택하세요.');
+  };
+
+  const handleGoHome = () => {
+    router.push('/');
   };
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -52,7 +59,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
 
   return (
     <Container>
-      <div className='space-y-6 print:space-y-4'>
+      <div className='space-y-6 print:space-y-4 pt-8'>
         {/* 헤더 */}
         <Card className='p-6 print:border-0 print:bg-transparent print:p-0 print:shadow-none'>
           <div className='flex flex-col md:flex-row md:items-start md:justify-between gap-4'>
@@ -197,7 +204,11 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
         </Card>
 
         {/* 액션 버튼 */}
-        <div className='flex flex-col sm:flex-row gap-3 print:hidden'>
+        <div className='flex flex-col sm:flex-row gap-3 print:hidden justify-center pt-4 pb-12'>
+          <Button onClick={handleGoHome} variant='outline' className='gap-2 w-full sm:w-auto'>
+            <ArrowLeft className='h-4 w-4' />
+            홈으로 돌아가기
+          </Button>
           <Button onClick={handleDownloadPDF} variant='default' className='gap-2 w-full sm:w-auto'>
             <Download className='h-4 w-4' />
             PDF 다운로드

@@ -70,7 +70,7 @@ export function InvoiceLookup() {
             <p className='text-xs text-muted-foreground mb-3'>다음 중 하나를 입력하세요:</p>
             <ul className='text-xs text-muted-foreground space-y-1 mb-3'>
               <li>• Notion 페이지 URL: https://www.notion.so/...</li>
-              <li>• 페이지 ID (32자 16진수): a1b2c3d4e5f6g7h8...</li>
+              <li>• 페이지 ID (32자 16진수): 3b4fd32770e4809fa2b2d01252965741</li>
             </ul>
             <Input
               id='pageId'
