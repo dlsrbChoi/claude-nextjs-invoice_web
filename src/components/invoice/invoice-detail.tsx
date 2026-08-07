@@ -20,37 +20,9 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleDownloadPDF = () => {
-    const element = document.querySelector('.invoice-print-area');
-    if (!element) {
-      console.error('Print area not found');
-      return;
-    }
-
-    const printWindow = window.open('', '', 'width=800,height=600');
-    if (!printWindow) {
-      toast.error('PDF 다운로드 창을 열 수 없습니다.');
-      return;
-    }
-
-    const htmlContent = element.innerHTML;
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>${invoice.title}</title>
-          <style>
-            * { margin: 0; padding: 0; }
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-            @media print { body { margin: 0; padding: 20px; } }
-          </style>
-        </head>
-        <body onload="window.print();window.close();">
-          ${htmlContent}
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    const filename = `${invoice.invoiceNumber || '견적서'}.pdf`;
+    window.print();
+    toast.success(`"${filename}" 파일이 다운로드됩니다. (인쇄 대화상자에서 "PDF로 저장" 선택)`);
   };
 
   const handleCopyLink = async () => {
