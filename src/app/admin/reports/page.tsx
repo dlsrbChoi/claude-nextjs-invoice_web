@@ -16,6 +16,15 @@ export const metadata = {
 };
 
 /**
+ * ISR 캐싱 전략 (Task 616)
+ * 신고 목록은 자주 상태가 변경되므로 30초 재검증으로 설정
+ * - 대시보드 (60초) 보다 짧게 설정
+ * - API 호출 빈도: 분당 2회 (Notion rate limit 충족)
+ * - 사용자 경험: 상태 변경 후 최대 30초 이내 반영
+ */
+export const revalidate = 30;
+
+/**
  * searchParams에서 커서 파라미터 추출
  * Task 614: 페이지네이션 커서 기반 조회
  */

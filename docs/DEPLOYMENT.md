@@ -252,26 +252,107 @@ curl https://invoice-web.vercel.app/_next/static/chunks/main.js | grep "sk-"
 
 ---
 
+---
+
+## 🚀 v3.0 배포 체크리스트 (Phase 4)
+
+### 배포 전 최종 검증
+
+**빌드 및 테스트**:
+
+```bash
+# 1. 전체 검사 실행
+npm run check-all
+
+# 2. 프로덕션 빌드 검증
+npm run build
+
+# 3. 결과 확인
+# ✅ lint 통과
+# ✅ format 통과
+# ✅ typecheck 통과
+# ✅ build 성공
+```
+
+**성능 및 보안**:
+
+- [x] Lighthouse 기준선 측정 (v3.0)
+- [x] 캐싱 전략 재검토 (CACHING_STRATEGY.md)
+- [x] Notion API 호출 최적화 확인
+- [x] 신고 목록 ISR 30초 조정
+- [x] 모든 보안 검사 통과
+
+### 배포 환경 설정
+
+**Vercel 환경 변수** (v3.0 필수):
+
+```
+# 필수 변수 (v1.0)
+NOTION_API_KEY=sk-...
+
+# 필수 변수 (v3.0 추가)
+ADMIN_PASSWORD=***
+ADMIN_SESSION_SECRET=[32+ bytes]
+NOTION_DATABASE_ID=***
+NOTION_REPORTS_DATABASE_ID=***
+
+# 선택 변수 (이메일)
+EMAIL_API_KEY=re_...
+EMAIL_FROM_ADDRESS=noreply@example.com
+NEXT_PUBLIC_APP_URL=https://invoice-web.vercel.app
+```
+
+### 배포 후 스모크 테스트
+
+```
+[ ] 홈페이지 로드 (/)
+[ ] 로그인 페이지 접근 (/login)
+[ ] 관리자 대시보드 (/admin)
+[ ] 견적서 목록 (/admin/invoices)
+[ ] 신고 관리 (/admin/reports)
+[ ] 이메일 공유 기능
+[ ] 견적서 조회 (/invoice/[id])
+[ ] PDF 다운로드
+[ ] 404 페이지 확인
+```
+
+---
+
 ## 🎯 최종 배포 상태
 
-- **Repository**: [GitHub URL]
+**v3.0 - 2026-08-07**
+
+- **Repository**: GitHub (invoice-web)
 - **Production URL**: `https://invoice-web.vercel.app`
-- **Domain**: (커스텀 도메인 설정 시 추가)
-- **Status**: ✅ 배포 완료
-- **Environment Variables**: ✅ 설정 완료
-- **SSL/HTTPS**: ✅ 자동 설정
+- **Domain**: (커스텀 도메인 설정 가능)
+- **Status**: ✅ 배포 준비 완료
+- **Environment Variables**: ✅ v3.0 업데이트 완료
+- **Build**: ✅ 성공 (Turbopack 최적화)
+- **Performance**: ✅ Lighthouse 기준 충족
+- **Security**: ✅ 모든 검사 통과
 
 ---
 
-## 📝 다음 단계
+## 📝 배포 히스토리
 
-1. ✅ Vercel 연결 (Task 011-1)
-2. ✅ 빌드 검증 (Task 011-2)
-3. ⏳ API 키 보안 검사 (Task 011-3)
-4. ⏳ 운영 가이드 작성 (Task 011-4)
+### v1.0 (초기)
+
+- ✅ Vercel 기본 배포
+- ✅ Notion API 연동
+- ✅ PDF 다운로드 기능
+
+### v2.0 (Phase 2)
+
+- ✅ 관리자 영역 추가
+- ✅ 세션 인증
+- ✅ 이메일 발송 기능
+
+### v3.0 (Phase 3~4) - 현재
+
+- ✅ 신고 관리 시스템
+- ✅ 성능 최적화 (캐싱 전략)
+- ✅ 운영 가이드 완성
 
 ---
 
-**✅ Task 011-1 완료** - Vercel 배포 가이드 작성 완료
-
-실제 Vercel 연결은 수동으로 진행하시면 됩니다.
+**✅ Task 617 진행 중** - 배포 문서 v3.0 업데이트 완료

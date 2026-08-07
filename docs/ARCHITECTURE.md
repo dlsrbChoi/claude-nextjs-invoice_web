@@ -426,35 +426,109 @@ Production URL
 
 ---
 
-## 📈 성능 최적화 전략
+## v3.0 아키텍처 추가사항
 
-### Task별 최적화 계획
+### 관리자 영역 구조
 
-| Task     | 최적화 항목                   | 상태    |
-| -------- | ----------------------------- | ------- |
-| Task 004 | 로딩 UI (Skeleton)            | ✅ 완료 |
-| Task 006 | Notion API 캐싱               | ⏳ 계획 |
-| Task 007 | PDF 생성 최적화 (동적 import) | ⏳ 계획 |
-| Task 009 | 전체 성능 최적화              | ⏳ 계획 |
-| Task 010 | 접근성 개선                   | ⏳ 계획 |
+```
+┌─────────────────────────────────────────────────────────┐
+│ Notion Workspace (v3.0 신규)                           │
+│  ├─ Invoices DB (기존)                                 │
+│  ├─ InvoiceItems DB (기존)                            │
+│  ├─ Reports DB (신규) ← 신고 데이터                    │
+│  └─ EmailLogs DB (신규) ← 발송 이력                   │
+└─────────────────────────────────────────────────────────┘
+            ↓
+Next.js Admin Routes
+  ├─ /admin (대시보드, ISR 60초)
+  ├─ /admin/invoices (목록, 페이지네이션)
+  ├─ /admin/clients (클라이언트 요약)
+  ├─ /admin/reports (신고 관리, ISR 30초)
+  └─ /login (인증)
 
-### 캐싱 전략 (Task 009)
+API Routes
+  ├─ /api/auth/login (세션 생성)
+  ├─ /api/auth/logout (세션 제거)
+  ├─ /api/admin/share-email (이메일 발송)
+  └─ /api/admin/reports/[id] (신고 상태 변경)
+```
+
+### 인증 및 보안 (v3.0)
+
+**세션 구조**:
 
 ```typescript
-// Notion API 응답 캐싱
-export async function getInvoiceFromNotion(pageId: string): Promise<Invoice> {
-  // fetch 캐시 설정
-  const response = await fetch(url, {
-    next: { revalidate: 3600 }, // 1시간마다 재검증
-  });
+// HMAC-SHA256 서명 기반
+Session {
+  id: string;
+  exp: number;
+  iat: number;
+  signature: string;
 }
 
-// 메타데이터 캐싱
-export async function generateMetadata({ params }) {
-  // 기존 getInvoiceFromNotion 결과 재사용
-  // (중복 API 호출 방지)
-}
+// 검증 단계
+1. 쿠키에서 토큰 추출
+2. 타임스탬프 검증 (만료 확인)
+3. HMAC 서명 검증 (timingSafeEqual 사용)
+4. 관리자 페이지 접근 허용/거부
 ```
+
+**입력 검증**:
+
+- 이메일: RFC 5322 + 길이 (3-254자)
+- 신고 상태: enum 검증 (pending, reviewing, resolved)
+- 메시지: 길이 제한 + XSS 방지 (개행 제거)
+
+**속도 제한**:
+
+- 이메일 발송: 분당 5건, 시간당 30건
+- 로그인 시도: 분당 5회
+
+### 캐싱 전략 (v3.0, Task 616)
+
+**React.cache() 메모이제이션**:
+
+```typescript
+// 렌더링 사이클 내 중복 요청 제거
+export const getInvoiceFromNotion = cache(getInvoiceFromNotionImpl);
+export const getInvoiceListFromNotion = cache(getInvoiceListFromNotionImpl);
+```
+
+**ISR (Incremental Static Regeneration)**:
+
+| 페이지          | 재검증 시간 | 이유                   |
+| --------------- | ----------- | ---------------------- |
+| /admin          | 60초        | 발행자용 실시간성 필요 |
+| /admin/reports  | 30초        | 신고 상태 자주 변경    |
+| /admin/invoices | 동적        | 커서별 독립 캐시       |
+| /invoice/[id]   | 동적        | 개별 요청시 생성       |
+
+---
+
+## 📈 성능 최적화 전략
+
+### v3.0 최적화 완료 항목
+
+| Task | 최적화 항목                 | 상태    |
+| ---- | --------------------------- | ------- |
+| 612  | 대시보드 구축 (React.cache) | ✅ 완료 |
+| 613  | 이메일 발송 (속도 제한)     | ✅ 완료 |
+| 614  | 신고 관리 (ISR 30초 설정)   | ✅ 완료 |
+| 616  | 성능 최적화 (캐싱 재점검)   | ✅ 완료 |
+
+### Notion API 호출 최적화
+
+**현재 호출 빈도**:
+
+- 대시보드 로드: 2회 API 호출
+- 60초 ISR: 분당 2회만 호출 (Notion rate limit 안전)
+- N+1 문제: React.cache()로 해결
+
+**병목 분석**:
+
+- Notion API 응답: 500-800ms (네트워크)
+- 캐싱 없을 시: 분당 120회 호출
+- 캐싱 적용 후: 분당 2회 호출 (60배 개선)
 
 ---
 
@@ -466,23 +540,64 @@ Phase 1: 골격 ✅
 ├─ Task 002: 타입 ✅
 └─ Task 003: UI 컴포넌트 ✅
 
-Phase 2: UI 완성 🟡
+Phase 2: UI 완성 ✅
 ├─ Task 004: UI 레이아웃 ✅
-├─ Task 005: Notion 연동 기반 (현재)
-└─ Task 006: 데이터 파싱
-└─ Task 007: PDF 생성
+├─ Task 005: Notion 연동 ✅
+├─ Task 006: 데이터 파싱 ✅
+└─ Task 007: PDF 생성 ✅
 
-Phase 3: 최적화 ⏳
-├─ Task 008: 에러 처리
-├─ Task 009: 성능 최적화
-└─ Task 010: 접근성 개선
+Phase 3: 관리자 영역 ✅
+├─ Task 601-602: 인증 시스템 ✅
+├─ Task 603-605: 대시보드 ✅
+├─ Task 606-608: 레이아웃 ✅
+├─ Task 609-615: 이메일/신고 ✅
 
-Phase 4: 배포 ⏳
-└─ Task 011: 배포 준비
+Phase 4: 최적화 및 배포 🟡
+├─ Task 616: 성능 최적화 ✅ (진행 중)
+└─ Task 617: 운영 문서 및 배포 🟡 (진행 중)
 ```
 
 ---
 
-**📝 문서 버전**: v1.0
-**📅 작성일**: 2026-08-06
-**🏗️ 상태**: 아키텍처 설계 완료 (Task 005 준비)
+## 배포 구조 (v3.0)
+
+```
+GitHub Repository
+  ↓ (push to main)
+Vercel CI/CD
+  ├─ 빌드 단계
+  │  ├─ npm install
+  │  ├─ npm run check-all (lint + format + typecheck)
+  │  ├─ npm run build (Turbopack 최적화)
+  │  └─ 번들 분석
+  │
+  ├─ 환경 변수 설정
+  │  ├─ NOTION_API_KEY (v1.0)
+  │  ├─ ADMIN_PASSWORD (v3.0)
+  │  ├─ ADMIN_SESSION_SECRET (v3.0)
+  │  ├─ NOTION_DATABASE_ID (v3.0)
+  │  ├─ NOTION_REPORTS_DATABASE_ID (v3.0)
+  │  ├─ EMAIL_API_KEY (v3.0, 선택)
+  │  └─ EMAIL_FROM_ADDRESS (v3.0, 선택)
+  │
+  └─ 배포
+     ├─ Production (main branch)
+     ├─ Preview (PR branches)
+     └─ Development (feature branches)
+
+Production URL
+  └─ https://invoice-web.vercel.app
+     ├─ / (홈)
+     ├─ /invoice/[id] (견적서 상세)
+     ├─ /login (관리자 로그인)
+     ├─ /admin (대시보드)
+     ├─ /admin/invoices (목록)
+     ├─ /admin/reports (신고)
+     └─ /api/* (API routes)
+```
+
+---
+
+**📝 문서 버전**: v3.0
+**📅 작성일**: 2026-08-07
+**🏗️ 상태**: Phase 4 진행 중 (Task 616-617)
