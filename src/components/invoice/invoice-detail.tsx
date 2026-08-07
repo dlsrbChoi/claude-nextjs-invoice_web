@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/layout/container';
-import { Download, Mail, ArrowLeft } from 'lucide-react';
+import { Download, Mail, ArrowLeft, Copy } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/lib/format';
 import { toast } from 'sonner';
 
@@ -22,6 +22,17 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
     // (인쇄 미리보기 → PDF로 저장 옵션 사용)
     window.print();
     toast.success('인쇄 대화상자가 열렸습니다. "PDF로 저장"을 선택하세요.');
+  };
+
+  const handleCopyLink = async () => {
+    const url = `${window.location.origin}/invoice/${invoice.notionPageId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('링크를 클립보드에 복사했습니다.');
+    } catch (error) {
+      console.error('링크 복사 실패:', error);
+      toast.error('링크 복사에 실패했습니다.');
+    }
   };
 
   const handleGoHome = () => {
@@ -208,6 +219,10 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
           <Button onClick={handleGoHome} variant='outline' className='gap-2 w-full sm:w-auto'>
             <ArrowLeft className='h-4 w-4' />
             홈으로 돌아가기
+          </Button>
+          <Button onClick={handleCopyLink} variant='outline' className='gap-2 w-full sm:w-auto'>
+            <Copy className='h-4 w-4' />
+            링크 복사
           </Button>
           <Button onClick={handleDownloadPDF} variant='default' className='gap-2 w-full sm:w-auto'>
             <Download className='h-4 w-4' />
