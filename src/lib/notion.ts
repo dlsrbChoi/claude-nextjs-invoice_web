@@ -424,7 +424,7 @@ async function getReportListFromNotionImpl(
     const requestBody = {
       sorts: [
         {
-          property: 'Created',
+          property: 'CreatedAt',
           direction: 'descending' as const,
         },
       ],

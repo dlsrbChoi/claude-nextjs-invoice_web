@@ -346,27 +346,19 @@ export function parseReportFromNotionPage(pageData: NotionPageData): Report {
 
   // 필수 필드 추출
   const targetInvoiceTitle =
-    extractTextFromProperty(props['target_invoice_title']) ??
-    extractTextFromProperty(props['대상_견적서']) ??
-    'Unknown Invoice';
+    extractTextFromProperty(props['title']) ?? 'Unknown Invoice';
 
   const targetNotionPageId =
-    extractTextFromProperty(props['target_notion_page_id']) ??
-    extractTextFromProperty(props['대상_페이지_ID']) ??
-    '';
+    extractTextFromProperty(props['target_notion_page_id']) ?? '';
 
   const reason =
-    extractTextFromProperty(props['reason']) ?? extractTextFromProperty(props['사유']) ?? '';
+    extractTextFromProperty(props['reason']) ?? '';
 
   const reporterName =
-    extractTextFromProperty(props['reporter_name']) ??
-    extractTextFromProperty(props['신고자']) ??
-    'Anonymous';
+    extractTextFromProperty(props['reporter_name']) ?? 'Anonymous';
 
   const reporterEmail =
-    extractEmailFromProperty(props['reporter_email']) ??
-    extractTextFromProperty(props['신고자_이메일']) ??
-    undefined;
+    extractEmailFromProperty(props['reporter_email']) ?? undefined;
 
   // 상태 파싱
   const statusStr =

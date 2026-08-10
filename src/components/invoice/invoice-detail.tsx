@@ -10,6 +10,7 @@ import { Container } from '@/components/layout/container';
 import { Download, Mail, ArrowLeft, Copy, Check } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/lib/format';
 import { toast } from 'sonner';
+import { ReportDialog } from './report-dialog';
 
 interface InvoiceDetailProps {
   invoice: Invoice;
@@ -244,6 +245,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
             <Download className='h-4 w-4' />
             PDF 다운로드
           </Button>
+          <ReportDialog notionPageId={invoice.notionPageId} />
         </div>
       </div>
     </Container>

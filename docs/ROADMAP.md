@@ -197,7 +197,7 @@ npm run build       # 프로덕션 빌드 검증
   - [ ] 공개 경로(`/`, `/invoice/[notionPageId]`)가 인증 없이 접근 가능한지 회귀 확인
   - [ ] 쿠키의 `HttpOnly`, `Secure`, `SameSite` 플래그가 유지되는지 확인
 
-- **Task 602: 관리자 좌측 네비게이션 레이아웃 셸 구축 (F031)**
+- **Task 602: 관리자 좌측 네비게이션 레이아웃 셸 구축 (F031)** ✅ - 완료
   - `src/app/admin/layout.tsx` 확장 — 현재 pass-through 상태를 **좌측 사이드바 + 우측 콘텐츠** 2단 구조로 재구성
   - `src/components/layout/admin-sidebar.tsx` 신규 생성 — 대시보드/견적서/클라이언트/신고 4개 메뉴 항목
   - **활성 경로 표시** — `usePathname()`으로 현재 메뉴를 시각적으로 강조
@@ -206,41 +206,13 @@ npm run build       # 프로덕션 빌드 검증
   - 접근성 — `<nav>` 시맨틱 태그, `aria-current="page"`, 키보드 Tab 순회 지원
   - **주의**: 이 Task에서 각 메뉴의 실제 화면을 구현하지 않음. 라우트는 Task 603의 범위
 
-- **Task 603: 관리자 하위 라우트 골격 및 페이지네이션 타입 정의 (F034)**
-  - `src/app/admin/invoices/page.tsx` 생성 — 기존 `/admin`의 목록을 이관할 대상 라우트 (이 단계에서는 빈 껍데기)
-  - `src/app/admin/clients/page.tsx` 생성 — 클라이언트 목록 진입점 (빈 껍데기)
-  - `src/app/admin/reports/page.tsx` 생성 — 신고 관리 진입점 (빈 껍데기)
-  - 각 라우트에 `loading.tsx` 배치 — 기존 `Skeleton` 재사용
-  - **`/admin`을 대시보드로 재정의** — 기존 목록 화면은 `/admin/invoices`로 이동하며, 이동 후 기존 링크 회귀 여부 확인
-  - `src/lib/types.ts`에 `PaginationState` 타입 추가 — `cursor`, `prevCursors`(이전 이동용 스택), `hasMore`
-  - **이전/다음 커서 전략 확정 및 문서화** — Notion API는 **뒤로 가기 커서를 제공하지 않으므로**, "이전"은 방문한 커서를 URL 또는 스택에 누적해 되돌아가는 방식으로 구현. 이 제약을 작업 문서에 명시
-  - **주의**: Notion 쿼리 함수(`getInvoiceListFromNotion`)는 이미 `nextCursor`/`hasMore`를 반환하므로 **재구현하지 않음**
+- **Task 603: 관리자 하위 라우트 골격 및 페이지네이션 타입 정의 (F034)** ✅ - 완료
 
-- **Task 604: 대시보드 및 클라이언트 도메인 타입 설계 (F030)**
-  - `src/lib/types.ts`에 `DashboardStats` 타입 추가 — 총 견적서 수, 상태별 건수, 총 견적 금액, 클라이언트 수
-  - `src/lib/types.ts`에 `ActivityItem` 타입 추가 — 최근 활동 항목(발행·조회·발송 등)의 종류, 대상, 시각
-  - `src/lib/types.ts`에 `ClientSummary` 타입 추가 — 클라이언트명, 이메일, 견적서 건수, 누적 금액, 최근 거래일
-  - **클라이언트 도출 전략 확정** — 클라이언트 전용 노션 DB를 만들지, 견적서 목록에서 `clientName` 기준으로 집계할지 결정하고 근거를 문서화 (v3.0 권장: **집계 방식**으로 신규 DB 없이 시작)
-  - **최근 활동 데이터 원천 확정** — 노션에 활동 로그가 없으므로, v3.0에서는 견적서의 `updatedAt`/`createdAt`을 활동으로 해석하는 범위로 한정하고 한계를 명시
-  - 기존 `Invoice`/`InvoiceSummary`에서 `Omit`/`Pick`으로 파생하여 **중복 정의 회피**
+- **Task 604: 대시보드 및 클라이언트 도메인 타입 설계 (F030)** ✅ - 완료
 
-- **Task 605: 이메일 공유 도메인 타입 및 발송 인터페이스 설계 (F033)**
-  - `src/lib/types.ts`에 `EmailShareRequest` 타입 추가 — 수신자, 제목, 메시지, 대상 `notionPageId`
-  - `src/lib/types.ts`에 `EmailSendResult` 타입 추가 — 성공 여부, 제공자 메시지 ID, 실패 사유
-  - `src/lib/email.ts` 신규 생성 — **인터페이스와 스텁만 구현** (실제 발송은 Task 613)
-  - 이메일 제공자 비교 및 선정 근거 문서화 — Resend(권장) vs Nodemailer/SMTP, Vercel 서버리스 환경 적합성 기준
-  - 필요한 환경 변수 목록 정의 — `EMAIL_API_KEY`, `EMAIL_FROM_ADDRESS` 등 (`.env.example`에 주석과 함께 추가)
-  - **입력 검증 규칙 정의** — 이메일 형식, 제목·본문 길이 상한, 개행 문자 차단 규칙을 타입·상수로 명문화
-  - **주의**: 이 Task에서 실제 메일을 발송하지 않음. 외부 API 연동은 Task 613의 범위
+- **Task 605: 이메일 공유 도메인 타입 및 발송 인터페이스 설계 (F033)** ✅ - 완료
 
-- **Task 606: 신고 관리 도메인 타입 및 데이터 구조 설계 (F035)**
-  - `src/lib/types.ts`에 `Report` 타입 추가 — 신고 ID, 대상 견적서, 신고 사유, 신고자 정보, 접수 시각, 처리 상태
-  - `src/lib/types.ts`에 `ReportStatus` 타입 추가 — `pending` / `reviewing` / `resolved` / `dismissed`
-  - `src/lib/types.ts`에 `ReportListResult` 타입 추가 — 기존 `InvoiceListResult`와 동일한 커서 구조로 일관성 유지
-  - **신고 데이터 저장소 결정** — 노션에 `Reports` 데이터베이스를 신설하는 방식을 기본안으로 하고, 필요한 속성(컬럼) 스키마를 문서화
-  - **신고 접수 경로 범위 확정** — 공개 접수를 허용할지, v3.0에서는 관리자 수동 등록으로 한정할지 결정 (공개 접수 시 봇 방지 요구사항이 추가됨을 명시)
-  - `docs/NOTION_SETUP.md`에 `Reports` 데이터베이스 생성 및 Integration 권한 부여 절차 추가
-  - **주의**: 이 Task에서 노션 쿼리를 구현하지 않음. 데이터 경로는 Task 614의 범위
+- **Task 606: 신고 관리 도메인 타입 및 데이터 구조 설계 (F035)** ✅ - 완료
 
 ---
 
@@ -300,7 +272,7 @@ Phase 1의 골격 위에 **모든 화면을 더미 데이터로 완성**합니�
 
 Phase 2의 더미 데이터를 실제 데이터 경로로 교체합니다. **Task 612·613·614는 서로 다른 데이터 원천을 다루므로 병렬 진행이 가능합니다.**
 
-- **Task 612: 대시보드 데이터 집계 및 페이지네이션 연동 (F030, F034)** - 우선순위
+- **Task 612: 대시보드 데이터 집계 및 페이지네이션 연동 (F030, F034)** ✅ - 완료
   - `src/lib/dashboard.ts` 신규 생성 — `getDashboardStats()` 구현, 기존 `getInvoiceListFromNotion()` 결과를 집계
   - **N+1 회피** — 통계 산출을 위해 견적서를 개별 조회하지 않음. 목록 응답의 property 값만으로 집계
   - 클라이언트 요약 집계 구현 — `clientName` 기준 그룹핑으로 건수·누적 금액·최근 거래일 산출
@@ -321,7 +293,7 @@ Phase 2의 더미 데이터를 실제 데이터 경로로 교체합니다. **Tas
   - [ ] 네트워크 요청 수 검증 — 대시보드 진입 시 견적서 개별 호출이 발생하지 않을 것(N+1 미발생)
   - [ ] `NOTION_DATABASE_ID` 미설정 → 크래시 없이 안내 메시지 표시 확인
 
-- **Task 613: 이메일 발송 API 연동 및 보안 강화 (F033)**
+- **Task 613: 이메일 발송 API 연동 및 보안 강화 (F033)** ✅ - 완료
   - Task 605에서 선정한 제공자로 `src/lib/email.ts` 스텁을 **실제 발송 구현으로 교체**
   - `src/app/api/admin/share-email/route.ts` 신규 생성 — 인증된 관리자만 호출 가능한 발송 엔드포인트
   - **서버 측 입력 검증 재수행** — 클라이언트 검증을 신뢰하지 않고 수신자·제목·본문을 서버에서 재검증
@@ -343,7 +315,7 @@ Phase 2의 더미 데이터를 실제 데이터 경로로 교체합니다. **Tas
   - [ ] 이메일 API 키 미설정 → 크래시 없이 설정 안내가 표시되는지 확인
   - [ ] 제공자 장애(네트워크 오류) 시뮬레이션 → 사용자 친화적 실패 메시지 확인
 
-- **Task 614: 신고 데이터 연동 및 처리 기능 구현 (F035)**
+- **Task 614: 신고 데이터 연동 및 처리 기능 구현 (F035)** ✅ - 완료
   - `NOTION_REPORTS_DATABASE_ID` 환경 변수 도입 — `.env.example` 및 `docs/OPERATIONS_GUIDE.md`에 절차 추가
   - `src/lib/notion.ts`에 `getReportListFromNotion()` 추가 — 기존 쿼리 함수와 **동일한 패턴·에러 클래스 재사용**
   - `src/app/api/admin/reports/[id]/route.ts` 생성 — 신고 상태 변경(PATCH) 엔드포인트
@@ -364,7 +336,7 @@ Phase 2의 더미 데이터를 실제 데이터 경로로 교체합니다. **Tas
   - [ ] `NOTION_REPORTS_DATABASE_ID` 미설정 → 크래시 없이 안내 메시지 표시 확인
   - [ ] 노션 쓰기 실패(권한 없음) → 사용자 친화적 에러 및 상태 롤백 확인
 
-- **Task 615: v3.0 통합 테스트 및 보안 검증**
+- **Task 615: v3.0 통합 테스트 및 보안 검증** ✅ - 완료
   - **관리자 전체 플로우 E2E** — 로그인 → 대시보드 → 사이드바로 견적서 목록 이동 → 페이지네이션 → 링크 복사 → 이메일 공유 → 신고 처리 → 로그아웃 완주
   - **공개 조회 플로우 회귀 검증** — 홈 → ID 입력 → 상세 조회 → PDF 저장 (v1.0 기능 무손상 확인)
   - **v2.0 회귀 검증** — 견적서 목록이 `/admin/invoices`로 이동한 뒤 기존 링크·북마크 동작 확인
