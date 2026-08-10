@@ -65,9 +65,7 @@ export function ReportDialog({ notionPageId }: ReportDialogProps) {
       setOpen(false);
     } catch (error) {
       console.error('Report submission error:', error);
-      toast.error(
-        error instanceof Error ? error.message : '신고 제출 중 오류가 발생했습니다.'
-      );
+      toast.error(error instanceof Error ? error.message : '신고 제출 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);
     }
@@ -75,9 +73,11 @@ export function ReportDialog({ notionPageId }: ReportDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className={cn(
-        'group/button inline-flex shrink-0 items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground shadow-xs transition-[background-color,color,border-color,box-shadow] hover:bg-muted active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 gap-2 w-full sm:w-auto'
-      )}>
+      <DialogTrigger
+        className={cn(
+          'group/button inline-flex shrink-0 items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground shadow-xs transition-[background-color,color,border-color,box-shadow] hover:bg-muted active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 gap-2 w-full sm:w-auto'
+        )}
+      >
         <AlertTriangle className='h-4 w-4' />
         신고하기
       </DialogTrigger>

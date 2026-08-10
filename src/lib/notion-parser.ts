@@ -345,20 +345,15 @@ export function parseReportFromNotionPage(pageData: NotionPageData): Report {
   const props = pageData.properties;
 
   // 필수 필드 추출
-  const targetInvoiceTitle =
-    extractTextFromProperty(props['title']) ?? 'Unknown Invoice';
+  const targetInvoiceTitle = extractTextFromProperty(props['title']) ?? 'Unknown Invoice';
 
-  const targetNotionPageId =
-    extractTextFromProperty(props['target_notion_page_id']) ?? '';
+  const targetNotionPageId = extractTextFromProperty(props['target_notion_page_id']) ?? '';
 
-  const reason =
-    extractTextFromProperty(props['reason']) ?? '';
+  const reason = extractTextFromProperty(props['reason']) ?? '';
 
-  const reporterName =
-    extractTextFromProperty(props['reporter_name']) ?? 'Anonymous';
+  const reporterName = extractTextFromProperty(props['reporter_name']) ?? 'Anonymous';
 
-  const reporterEmail =
-    extractEmailFromProperty(props['reporter_email']) ?? undefined;
+  const reporterEmail = extractEmailFromProperty(props['reporter_email']) ?? undefined;
 
   // 상태 파싱
   const statusStr =
